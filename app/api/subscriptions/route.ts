@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const now = new Date();
     const all = await prisma.subscription.findMany({
+      where: { userId: Number(user.id) },
       orderBy: [{ renewalDate: "asc" }, { id: "asc" }],
     });
 
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
         monthlyCost: data.monthlyCost,
         status: data.status,
         notes: data.notes,
+        userId: Number(user.id),
       },
     });
 

@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const all = await prisma.subscription.findMany();
+    const all = await prisma.subscription.findMany({
+      where: { userId: Number(user.id) },
+    });
     const stats = computeStats(all.map((s) => serializeSubscription(s, now)));
     return NextResponse.json(stats);
   } catch {

@@ -5,6 +5,7 @@ export type ApiErrorCode =
   | "bad_request"
   | "unauthorized"
   | "not_found"
+  | "conflict"
   | "validation_error"
   | "internal_error";
 
@@ -13,6 +14,7 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   validation_error: 400,
   unauthorized: 401,
   not_found: 404,
+  conflict: 409,
   internal_error: 500,
 };
 

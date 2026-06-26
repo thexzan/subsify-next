@@ -26,9 +26,11 @@ export async function GET(req: NextRequest, ctx: Context) {
   if (!id) return apiError("bad_request", "Invalid subscription id");
 
   try {
-    const sub = await prisma.subscription.findUnique({ where: { id } });
-    if (!sub) return notFound("Subscription");
-    return NextResponse.json(serializeSubscription(sub));
+    const found = await prisma.subscription.findFirst({
+      where: { id, userId: Number(user.id) },
+    });
+    if (!found) return notFound("Subscription");
+    return NextResponse.json(serializeSubscription(found));
   } catch {
     return internalError();
   }
@@ -46,7 +48,9 @@ export async function PUT(req: NextRequest, ctx: Context) {
     const parsed = subscriptionInputSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
 
-    const existing = await prisma.subscription.findUnique({ where: { id } });
+    const existing = await prisma.subscription.findFirst({
+      where: { id, userId: Number(user.id) },
+    });
     if (!existing) return notFound("Subscription");
 
     const data = parsed.data;
@@ -76,7 +80,9 @@ export async function DELETE(req: NextRequest, ctx: Context) {
   if (!id) return apiError("bad_request", "Invalid subscription id");
 
   try {
-    const existing = await prisma.subscription.findUnique({ where: { id } });
+    const existing = await prisma.subscription.findFirst({
+      where: { id, userId: Number(user.id) },
+    });
     if (!existing) return notFound("Subscription");
 
     await prisma.subscription.delete({ where: { id } });
