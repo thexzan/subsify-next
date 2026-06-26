@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { LayoutDashboard, Receipt, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Receipt, Settings, LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/subscriptions", label: "Subscriptions", icon: Receipt },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 function Brand() {
