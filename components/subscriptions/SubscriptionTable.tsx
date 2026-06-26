@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -61,6 +61,34 @@ function rowHighlight(sub: Subscription): string {
   return "";
 }
 
+type SortKey = "toolName" | "department" | "renewalDate" | "monthlyCost" | "effectiveStatus";
+type SortDir = "asc" | "desc";
+
+const STATUS_ORDER: Record<string, number> = {
+  expired: 0,
+  expiring_soon: 1,
+  active: 2,
+  cancelled: 3,
+};
+
+function compareRows(a: Subscription, b: Subscription, key: SortKey): number {
+  switch (key) {
+    case "monthlyCost":
+      return a.monthlyCost - b.monthlyCost;
+    case "renewalDate": {
+      // Nulls sort last regardless of direction is handled by caller; here put
+      // null as +Infinity so ascending pushes them to the bottom.
+      const av = a.renewalDate ? new Date(a.renewalDate).getTime() : Infinity;
+      const bv = b.renewalDate ? new Date(b.renewalDate).getTime() : Infinity;
+      return av - bv;
+    }
+    case "effectiveStatus":
+      return STATUS_ORDER[a.effectiveStatus] - STATUS_ORDER[b.effectiveStatus];
+    default:
+      return a[key].localeCompare(b[key]);
+  }
+}
+
 export function SubscriptionTable({
   rows,
   onEdit,
@@ -70,6 +98,21 @@ export function SubscriptionTable({
 }) {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<Subscription | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
+
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    const sorted = [...rows].sort((a, b) => compareRows(a, b, sort.key));
+    return sort.dir === "asc" ? sorted : sorted.reverse();
+  }, [rows, sort]);
+
+  const toggleSort = (key: SortKey) => {
+    setSort((prev) =>
+      prev?.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" },
+    );
+  };
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
@@ -121,16 +164,16 @@ export function SubscriptionTable({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Tool</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Renewal</TableHead>
-              <TableHead className="text-right">Monthly cost</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead label="Tool" sortKey="toolName" sort={sort} onSort={toggleSort} />
+              <SortableHead label="Department" sortKey="department" sort={sort} onSort={toggleSort} />
+              <SortableHead label="Renewal" sortKey="renewalDate" sort={sort} onSort={toggleSort} />
+              <SortableHead label="Monthly cost" sortKey="monthlyCost" sort={sort} onSort={toggleSort} align="right" />
+              <SortableHead label="Status" sortKey="effectiveStatus" sort={sort} onSort={toggleSort} />
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((sub) => (
+            {sortedRows.map((sub) => (
               <TableRow key={sub.id} className={cn(rowHighlight(sub))}>
                 <TableCell className="font-medium">{sub.toolName}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -217,5 +260,38 @@ export function SubscriptionTable({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+function SortableHead({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: SortDir } | null;
+  onSort: (key: SortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sort?.key === sortKey;
+  const Icon = !active ? ChevronsUpDown : sort!.dir === "asc" ? ChevronUp : ChevronDown;
+  return (
+    <TableHead className={align === "right" ? "text-right" : undefined}>
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={cn(
+          "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+          align === "right" && "flex-row-reverse",
+          active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+        <Icon className={cn("h-3.5 w-3.5", !active && "opacity-50")} />
+      </button>
+    </TableHead>
   );
 }
