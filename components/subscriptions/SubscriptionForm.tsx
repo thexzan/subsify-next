@@ -109,7 +109,7 @@ export function SubscriptionForm({
           <Label htmlFor="renewalDate">Renewal date</Label>
           <Input id="renewalDate" type="date" {...register("renewalDate")} />
           <p className="text-xs text-muted-foreground">
-            Leave empty for cancelled tools.
+            Optional — not needed for cancelled subscriptions.
           </p>
         </div>
         <div className="space-y-2">

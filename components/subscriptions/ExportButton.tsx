@@ -39,6 +39,7 @@ export function ExportButton({ rows }: { rows: Subscription[] }) {
       size="sm"
       onClick={handleExport}
       disabled={rows.length === 0}
+      title={rows.length === 0 ? "No subscriptions to export" : undefined}
     >
       <Download className="h-4 w-4" />
       Export CSV

@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SubscriptionTable } from "@/components/subscriptions/SubscriptionTable";
 import { SubscriptionModal } from "@/components/subscriptions/SubscriptionModal";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
+import { ErrorState } from "@/components/ErrorState";
 import type { Subscription } from "@/lib/types";
 
 const STATUS_OPTIONS = [
@@ -66,7 +67,7 @@ export default function SubscriptionsPage() {
     department,
   };
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["subscriptions", filters],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -112,7 +113,7 @@ export default function SubscriptionsPage() {
       </header>
 
       {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -150,14 +151,24 @@ export default function SubscriptionsPage() {
       </div>
 
       {/* Content */}
-      {isLoading ? (
+      {isError ? (
+        <ErrorState onRetry={() => refetch()} />
+      ) : isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 rounded-lg" />
+            <Skeleton key={i} className="h-14 rounded-xl" />
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <EmptyState hasFilters={hasFilters} onAdd={openAdd} />
+        <EmptyState
+          hasFilters={hasFilters}
+          onAdd={openAdd}
+          onClearFilters={() => {
+            setSearch("");
+            setStatus("all");
+            setDepartment("all");
+          }}
+        />
       ) : (
         <div className={isFetching ? "opacity-70 transition-opacity" : ""}>
           <SubscriptionTable rows={rows} onEdit={openEdit} />
@@ -177,9 +188,11 @@ export default function SubscriptionsPage() {
 function EmptyState({
   hasFilters,
   onAdd,
+  onClearFilters,
 }: {
   hasFilters: boolean;
   onAdd: () => void;
+  onClearFilters: () => void;
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
@@ -191,7 +204,11 @@ function EmptyState({
           ? "Try adjusting your search or filters."
           : "Add your first tool to start tracking renewals."}
       </p>
-      {!hasFilters && (
+      {hasFilters ? (
+        <Button variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
+          Clear filters
+        </Button>
+      ) : (
         <Button size="sm" className="mt-4" onClick={onAdd}>
           <Plus className="h-4 w-4" />
           Add subscription
