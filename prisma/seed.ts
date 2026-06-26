@@ -15,7 +15,7 @@ function daysFromNow(days: number): Date {
 async function main() {
   const passwordHash = await bcrypt.hash("subsify2025", 10);
 
-  await prisma.user.upsert({
+  const admin = await prisma.user.upsert({
     where: { email: "admin@subsify.com" },
     update: {},
     create: {
@@ -42,7 +42,9 @@ async function main() {
 
   // Reset to keep seed deterministic across re-runs.
   await prisma.subscription.deleteMany();
-  await prisma.subscription.createMany({ data: subscriptions });
+  await prisma.subscription.createMany({
+    data: subscriptions.map((s) => ({ ...s, userId: admin.id })),
+  });
 
   console.log(`Seeded 1 user and ${subscriptions.length} subscriptions.`);
 }

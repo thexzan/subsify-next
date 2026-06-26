@@ -17,8 +17,7 @@ export const subscriptionInputSchema = z.object({
   monthlyCost: z.coerce.number().nonnegative("Cost must be zero or positive"),
   status: z.enum(SUB_STATUS_VALUES),
   notes: z
-    .string()
-    .max(5000)
+    .union([z.string().max(5000), z.null()])
     .optional()
     .transform((v) => (v && v.trim() ? v.trim() : null)),
 });

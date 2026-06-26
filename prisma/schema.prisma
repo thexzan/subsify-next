@@ -11,11 +11,12 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(100)
-  email     String   @unique @db.VarChar(100)
-  password  String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at")
+  id            Int            @id @default(autoincrement())
+  name          String         @db.VarChar(100)
+  email         String         @unique @db.VarChar(100)
+  password      String         @db.VarChar(255)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  subscriptions Subscription[]
 
   @@map("users")
 }
@@ -35,8 +36,11 @@ model Subscription {
   monthlyCost  Decimal   @map("monthly_cost") @db.Decimal(12, 2)
   status       SubStatus @default(active)
   notes        String?   @db.Text
+  userId       Int       @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
+  @@index([userId])
   @@map("subscriptions")
 }

@@ -7,6 +7,7 @@ import {
   errorResponseSchema,
   credentialsSchema,
   changePasswordSchema,
+  registerSchema,
 } from "./api-schemas";
 
 // Derive JSON Schema from the same zod schemas the API validates with, so the
@@ -55,11 +56,32 @@ export function buildOpenApiDocument() {
         TokenResponse: jsonSchema(tokenResponseSchema),
         Credentials: jsonSchema(credentialsSchema),
         ChangePassword: jsonSchema(changePasswordSchema),
+        RegisterInput: jsonSchema(registerSchema),
         Error: jsonSchema(errorResponseSchema),
       },
     },
     security: [{ bearerAuth: [] }, { cookieAuth: [] }],
     paths: {
+      "/api/auth/register": {
+        post: {
+          summary: "Create a new account",
+          security: [],
+          tags: ["Auth"],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/RegisterInput" },
+              },
+            },
+          },
+          responses: {
+            "201": { description: "Account created" },
+            "400": errorResponse("Validation error"),
+            "409": errorResponse("Email already registered"),
+          },
+        },
+      },
       "/api/auth/token": {
         post: {
           summary: "Exchange credentials for a Bearer token",
