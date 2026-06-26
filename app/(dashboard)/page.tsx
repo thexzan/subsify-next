@@ -90,7 +90,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="hidden sm:block lg:col-span-2">
           {subsQuery.isLoading ? (
             <Skeleton className="h-[200px] rounded-xl" />
           ) : (
