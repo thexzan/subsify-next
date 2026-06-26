@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api-auth";
 import { serializeSubscription } from "@/lib/serialize";
-import { subscriptionInputSchema, SUB_STATUS_VALUES } from "@/lib/validation";
+import { filterSubscriptions } from "@/lib/subscriptions";
+import { subscriptionInputSchema } from "@/lib/validation";
 import { unauthorized, validationError, internalError } from "@/lib/api-response";
 
 export async function GET(req: NextRequest) {
@@ -11,30 +12,17 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const statusFilter = searchParams.get("status");
-    const search = searchParams.get("search")?.trim().toLowerCase();
-    const department = searchParams.get("department")?.trim();
-
     const now = new Date();
     const all = await prisma.subscription.findMany({
       orderBy: [{ renewalDate: "asc" }, { id: "asc" }],
     });
 
-    let result = all.map((s) => serializeSubscription(s, now));
-
-    if (statusFilter && SUB_STATUS_VALUES.includes(statusFilter as never)) {
-      result = result.filter((s) => s.effectiveStatus === statusFilter);
-    }
-    if (department) {
-      result = result.filter((s) => s.department === department);
-    }
-    if (search) {
-      result = result.filter(
-        (s) =>
-          s.toolName.toLowerCase().includes(search) ||
-          s.department.toLowerCase().includes(search),
-      );
-    }
+    const serialized = all.map((s) => serializeSubscription(s, now));
+    const result = filterSubscriptions(serialized, {
+      status: searchParams.get("status"),
+      search: searchParams.get("search"),
+      department: searchParams.get("department"),
+    });
 
     return NextResponse.json(result);
   } catch {
