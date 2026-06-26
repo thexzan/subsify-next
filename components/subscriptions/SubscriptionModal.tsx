@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -21,6 +22,18 @@ import {
   type SubscriptionFormValues,
 } from "./SubscriptionForm";
 import type { Subscription } from "@/lib/types";
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
 
 function toPayload(values: SubscriptionFormValues) {
   return {
@@ -45,6 +58,7 @@ export function SubscriptionModal({
   departments: string[];
 }) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const mutation = useMutation({
     mutationFn: async (values: SubscriptionFormValues) => {
@@ -90,11 +104,10 @@ export function SubscriptionModal({
     />
   );
 
-  return (
-    <>
-      {/* Mobile: bottom sheet */}
+  if (isMobile) {
+    return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="sm:hidden">
+        <DrawerContent>
           <DrawerHeader className="mb-4">
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
@@ -102,17 +115,18 @@ export function SubscriptionModal({
           {form}
         </DrawerContent>
       </Drawer>
+    );
+  }
 
-      {/* Desktop: centered dialog */}
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="hidden sm:block sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
-          </DialogHeader>
-          {form}
-        </DialogContent>
-      </Dialog>
-    </>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {form}
+      </DialogContent>
+    </Dialog>
   );
 }
