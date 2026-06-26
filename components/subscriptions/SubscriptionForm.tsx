@@ -73,7 +73,7 @@ export function SubscriptionForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="toolName">Tool name</Label>
-          <Input id="toolName" placeholder="Notion" {...register("toolName")} />
+          <Input id="toolName" placeholder="Notion" autoFocus {...register("toolName")} />
           {errors.toolName && (
             <p className="text-xs text-destructive">{errors.toolName.message}</p>
           )}
