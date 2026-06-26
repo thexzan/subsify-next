@@ -8,6 +8,7 @@ import {
   credentialsSchema,
   changePasswordSchema,
   registerSchema,
+  profileInputSchema,
 } from "./api-schemas";
 
 // Derive JSON Schema from the same zod schemas the API validates with, so the
@@ -57,6 +58,7 @@ export function buildOpenApiDocument() {
         Credentials: jsonSchema(credentialsSchema),
         ChangePassword: jsonSchema(changePasswordSchema),
         RegisterInput: jsonSchema(registerSchema),
+        ProfileInput: jsonSchema(profileInputSchema),
         Error: jsonSchema(errorResponseSchema),
       },
     },
@@ -125,6 +127,26 @@ export function buildOpenApiDocument() {
             "200": { description: "Password changed" },
             "400": errorResponse("Wrong current password or validation error"),
             "401": errorResponse("Authentication required"),
+          },
+        },
+      },
+      "/api/auth/profile": {
+        patch: {
+          summary: "Update the authenticated user's name and email",
+          tags: ["Auth"],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProfileInput" },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Profile updated" },
+            "400": errorResponse("Validation error"),
+            "401": errorResponse("Authentication required"),
+            "409": errorResponse("Email already in use"),
           },
         },
       },

@@ -55,3 +55,8 @@ export const registerSchema = z.object({
   email: z.string().email().max(100),
   password: z.string().min(8),
 });
+
+export const profileInputSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100),
+  email: z.string().trim().toLowerCase().email("Enter a valid email").max(100),
+});
