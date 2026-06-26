@@ -103,6 +103,18 @@ curl http://localhost:3000/api/subscriptions \
   -H "Authorization: Bearer <token>"
 ```
 
+### Interactive docs & OpenAPI spec
+
+- **Interactive docs:** `/api/docs` — a browsable API reference (Scalar) rendered from the live spec.
+- **OpenAPI spec:** `/api/openapi` — the OpenAPI 3.1 document as JSON. It's derived from the same zod schemas the API validates with, so the contract stays in sync with the code.
+
+The spec is machine-readable, so a future iOS client can generate a typed Swift client from it:
+
+```bash
+# Save the spec, then generate a client with Apple's swift-openapi-generator
+curl http://localhost:3000/api/openapi -o openapi.json
+```
+
 ## Running with Docker
 
 ```bash
