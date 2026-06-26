@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { SUB_STATUS_VALUES } from "@/lib/validation";
 import type { Subscription } from "@/lib/types";
+import { DepartmentCombobox } from "./DepartmentCombobox";
 
 const formSchema = z.object({
   toolName: z.string().trim().min(1, "Tool name is required").max(100),
@@ -40,11 +41,13 @@ const STATUS_LABELS: Record<(typeof SUB_STATUS_VALUES)[number], string> = {
 export function SubscriptionForm({
   initial,
   submitting,
+  departments,
   onSubmit,
   onCancel,
 }: {
   initial?: Subscription;
   submitting: boolean;
+  departments: string[];
   onSubmit: (values: SubscriptionFormValues) => void;
   onCancel: () => void;
 }) {
@@ -67,6 +70,10 @@ export function SubscriptionForm({
   });
 
   const status = watch("status");
+  const department = watch("department");
+
+  // Register fields edited via custom controls so RHF validates them.
+  register("department");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -80,10 +87,16 @@ export function SubscriptionForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="department">Department</Label>
-          <Input
+          <DepartmentCombobox
             id="department"
-            placeholder="Engineering"
-            {...register("department")}
+            value={department}
+            departments={departments}
+            onChange={(v) =>
+              setValue("department", v, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
           />
           {errors.department && (
             <p className="text-xs text-destructive">{errors.department.message}</p>

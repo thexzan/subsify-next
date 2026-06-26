@@ -30,10 +30,12 @@ export function SubscriptionModal({
   open,
   onOpenChange,
   editing,
+  departments,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: Subscription | null;
+  departments: string[];
 }) {
   const queryClient = useQueryClient();
 
@@ -80,6 +82,7 @@ export function SubscriptionModal({
         </DialogHeader>
         <SubscriptionForm
           key={editing?.id ?? "new"}
+          departments={departments}
           initial={editing ?? undefined}
           submitting={mutation.isPending}
           onSubmit={(values) => mutation.mutate(values)}
