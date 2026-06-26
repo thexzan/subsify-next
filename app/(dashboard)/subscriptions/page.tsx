@@ -16,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SubscriptionTable } from "@/components/subscriptions/SubscriptionTable";
 import { SubscriptionModal } from "@/components/subscriptions/SubscriptionModal";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
-import { SUB_STATUS_VALUES } from "@/lib/validation";
 import type { Subscription } from "@/lib/types";
 
 const STATUS_OPTIONS = [
