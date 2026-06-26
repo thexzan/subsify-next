@@ -168,6 +168,7 @@ export default function SubscriptionsPage() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         editing={editing}
+        departments={departments}
       />
     </div>
   );
