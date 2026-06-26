@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+enum SubStatus {
+  active
+  expiring_soon
+  expired
+  cancelled
+}
+
+model Subscription {
+  id           Int       @id @default(autoincrement())
+  toolName     String    @map("tool_name") @db.VarChar(100)
+  department   String    @db.VarChar(100)
+  renewalDate  DateTime? @map("renewal_date") @db.Date
+  monthlyCost  Decimal   @map("monthly_cost") @db.Decimal(12, 2)
+  status       SubStatus @default(active)
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
