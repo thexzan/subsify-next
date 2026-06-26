@@ -57,14 +57,8 @@ export default function DashboardPage() {
               label="Expiring soon"
               value={stats.expiring_soon}
               tone="warn"
-              alert={stats.expiring_soon > 0}
             />
-            <StatsCard
-              label="Expired"
-              value={stats.expired}
-              tone="hot"
-              alert={stats.expired > 0}
-            />
+            <StatsCard label="Expired" value={stats.expired} tone="hot" />
           </>
         )}
       </div>

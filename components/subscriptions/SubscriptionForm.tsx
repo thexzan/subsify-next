@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -71,9 +72,11 @@ export function SubscriptionForm({
 
   const status = watch("status");
   const department = watch("department");
+  const monthlyCost = watch("monthlyCost");
 
   // Register fields edited via custom controls so RHF validates them.
   register("department");
+  register("monthlyCost");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -114,13 +117,13 @@ export function SubscriptionForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="monthlyCost">Monthly cost (IDR)</Label>
-          <Input
+          <CurrencyInput
             id="monthlyCost"
-            type="number"
-            min={0}
-            step={1000}
-            placeholder="160000"
-            {...register("monthlyCost", { valueAsNumber: true })}
+            placeholder="160.000"
+            value={monthlyCost ?? 0}
+            onValueChange={(v) =>
+              setValue("monthlyCost", v, { shouldValidate: true, shouldDirty: true })
+            }
           />
           {errors.monthlyCost && (
             <p className="text-xs text-destructive">{errors.monthlyCost.message}</p>
