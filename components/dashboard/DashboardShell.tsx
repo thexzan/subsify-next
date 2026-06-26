@@ -4,15 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { LayoutDashboard, Receipt, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Receipt, LogOut, Menu, X, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/subscriptions", label: "Subscriptions", icon: Receipt },
-  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 function Brand() {
@@ -64,6 +64,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function UserFooter() {
   const { data: session } = useSession();
+  const [pwOpen, setPwOpen] = useState(false);
   return (
     <div className="border-t border-sidebar-border pt-4">
       <div className="mb-3 px-3">
@@ -78,12 +79,22 @@ function UserFooter() {
         variant="ghost"
         size="sm"
         className="w-full justify-start gap-3 text-muted-foreground"
+        onClick={() => setPwOpen(true)}
+      >
+        <KeyRound className="h-4 w-4" />
+        Change password
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start gap-3 text-muted-foreground"
         onClick={() => signOut({ callbackUrl: "/login" })}
       >
         <LogOut className="h-4 w-4" />
         Sign out
       </Button>
       <ThemeToggle />
+      <ChangePasswordModal open={pwOpen} onOpenChange={setPwOpen} />
     </div>
   );
 }
