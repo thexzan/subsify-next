@@ -57,14 +57,35 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
-  // Radix Select/Popover/Command portal their content to document.body, outside
-  // this dialog's DOM. Without this guard, clicking an option in a nested select
-  // registers as an "interaction outside" and closes the whole dialog.
-  const isInsidePortalLayer = (target: EventTarget | null) =>
-    target instanceof Element &&
-    !!target.closest(
-      '[data-slot="select-content"],[data-radix-popper-content-wrapper],[role="listbox"]'
+  // Bug: a Radix Select/popover open inside the dialog tears down synchronously
+  // on the dismissing pointerdown, so by the time the dialog's outside handler
+  // runs the popover is gone and the click looks like a plain outside-click
+  // that closes the dialog. Detecting "is a popover open" at handler time is
+  // racy (the handler can fire a tick later). Instead, on every capture-phase
+  // pointerdown record whether a popover was open at that instant; the flag is
+  // overwritten by the next pointerdown (no timer), so whenever the dialog's
+  // outside handler reads it, it reflects this exact interaction.
+  const popoverOwnedInteraction = React.useRef(false)
+  React.useEffect(() => {
+    const onPointerDownCapture = () => {
+      popoverOwnedInteraction.current = !!document.querySelector(
+        '[data-slot="select-content"],[data-slot="popover-content"],[role="listbox"]'
+      )
+    }
+    document.addEventListener("pointerdown", onPointerDownCapture, true)
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDownCapture, true)
+  }, [])
+
+  const shouldIgnoreOutside = (target: EventTarget | null) => {
+    if (popoverOwnedInteraction.current) return true
+    return (
+      target instanceof Element &&
+      !!target.closest(
+        '[data-slot="select-content"],[data-slot="popover-content"],[data-radix-popper-content-wrapper],[role="listbox"]'
+      )
     )
+  }
 
   return (
     <DialogPortal>
@@ -72,14 +93,14 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         onPointerDownOutside={(event) => {
-          if (isInsidePortalLayer(event.target)) {
+          if (shouldIgnoreOutside(event.target)) {
             event.preventDefault()
             return
           }
           onPointerDownOutside?.(event)
         }}
         onInteractOutside={(event) => {
-          if (isInsidePortalLayer(event.target)) {
+          if (shouldIgnoreOutside(event.target)) {
             event.preventDefault()
             return
           }
