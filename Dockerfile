@@ -33,15 +33,17 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Prisma schema + migrations and the CLI, so the entrypoint can run
-# `prisma migrate deploy` and seed against the database at startup.
+# The entrypoint runs `prisma migrate deploy` (and optional seed) at startup,
+# which needs the FULL dependency tree — the Prisma 7 CLI is all-JS with many
+# transitive deps and resolves wasm files relative to its real location, so
+# cherry-picking packages breaks it. Overwrite the standalone's minimal
+# node_modules (laid down above) with the complete builder tree; it's a
+# superset, so the server keeps working. Also bring the generated Prisma
+# client + schema/migrations the CLI and seed need.
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/app/generated ./app/generated
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh && chown -R nextjs:nodejs /app
