@@ -4,10 +4,34 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { LayoutDashboard, Receipt, LogOut, Menu, X, KeyRound } from "lucide-react";
+import { useTheme } from "next-themes";
+import {
+  LayoutDashboard,
+  Receipt,
+  LogOut,
+  Menu,
+  X,
+  KeyRound,
+  ChevronsUpDown,
+  Sun,
+  Moon,
+  Monitor,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 
 const NAV = [
@@ -64,36 +88,77 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function UserFooter() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
   const [pwOpen, setPwOpen] = useState(false);
+
+  const name = session?.user?.name ?? "Admin";
+  const initial = name.charAt(0).toUpperCase();
+
   return (
-    <div className="border-t border-sidebar-border pt-4">
-      <div className="mb-3 px-3">
-        <p className="truncate text-sm font-medium">
-          {session?.user?.name ?? "Admin"}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {session?.user?.email}
-        </p>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start gap-3 text-muted-foreground"
-        onClick={() => setPwOpen(true)}
-      >
-        <KeyRound className="h-4 w-4" />
-        Change password
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start gap-3 text-muted-foreground"
-        onClick={() => signOut({ callbackUrl: "/login" })}
-      >
-        <LogOut className="h-4 w-4" />
-        Sign out
-      </Button>
-      <ThemeToggle />
+    <div className="border-t border-sidebar-border pt-3">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-sidebar-accent/60"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+              {initial}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">{name}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {session?.user?.email}
+              </span>
+            </span>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          side="top"
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
+        >
+          <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
+            {session?.user?.email}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setPwOpen(true)}>
+            <KeyRound className="h-4 w-4" />
+            Change password
+          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Sun className="h-4 w-4" />
+              Theme
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                <DropdownMenuRadioItem value="light">
+                  <Sun className="h-4 w-4" />
+                  Light
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="dark">
+                  <Moon className="h-4 w-4" />
+                  Dark
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="system">
+                  <Monitor className="h-4 w-4" />
+                  System
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <ChangePasswordModal open={pwOpen} onOpenChange={setPwOpen} />
     </div>
   );
