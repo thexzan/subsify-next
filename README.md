@@ -12,7 +12,8 @@ The backend is built API-first, so the same REST endpoints that power the web ap
 - **Renewal alerts** — rows renewing within the urgent window (default 7 days) are flagged red, within the expiring window (default 30 days) amber; both windows are user-configurable. Active rows approaching renewal show explicit "Expiring soon" / "Urgent" badges.
 - **Settings** — per-user configurable alert thresholds for expiring-soon and urgent windows
 - **CSV export** — export the currently filtered list
-- **Authentication** — credential-based login with protected pages
+- **Authentication** — self-service signup, credential-based login, profile editing, and password change; protected pages
+- **Mobile-optimized** — responsive layout with card list on mobile, bottom sheet forms, bottom navigation, and floating action button
 - **REST API** — clean JSON endpoints, usable with either a session cookie or a Bearer token
 
 ## Tech stack
@@ -86,7 +87,10 @@ All endpoints return JSON. Requests authenticate with either the session cookie 
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `POST` | `/api/auth/register` | Create a new account |
 | `POST` | `/api/auth/token` | Exchange credentials for a Bearer token |
+| `POST` | `/api/auth/change-password` | Change password |
+| `PATCH` | `/api/auth/profile` | Update name and email |
 | `GET` | `/api/auth/preferences` | Get alert thresholds (expiring-soon and urgent windows) |
 | `PATCH` | `/api/auth/preferences` | Update alert thresholds |
 | `GET` | `/api/subscriptions` | List subscriptions (`?status=`, `?search=`, `?department=`) |
