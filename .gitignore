@@ -44,3 +44,5 @@ yarn-error.log*
 
 # internal working docs
 /docs/
+
+/app/generated/prisma
