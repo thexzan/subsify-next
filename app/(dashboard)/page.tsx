@@ -5,6 +5,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RenewalRadar } from "@/components/dashboard/RenewalRadar";
 import { ExpiringList } from "@/components/dashboard/ExpiringList";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ErrorState";
 import { formatIDR, type Stats, type Subscription } from "@/lib/types";
 
 async function fetchJSON<T>(url: string): Promise<T> {
@@ -34,6 +35,15 @@ export default function DashboardPage() {
         </p>
       </header>
 
+      {statsQuery.isError || subsQuery.isError ? (
+        <ErrorState
+          onRetry={() => {
+            statsQuery.refetch();
+            subsQuery.refetch();
+          }}
+        />
+      ) : (
+        <>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statsQuery.isLoading || !stats ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -89,6 +99,8 @@ export default function DashboardPage() {
         <Skeleton className="h-[200px] rounded-xl" />
       ) : (
         <ExpiringList subscriptions={subsQuery.data ?? []} />
+      )}
+        </>
       )}
     </div>
   );
