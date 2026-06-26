@@ -37,3 +37,30 @@ export function StatusBadge({
     </span>
   );
 }
+
+/**
+ * Secondary badge shown alongside StatusBadge when an active subscription is
+ * approaching renewal. Makes the row highlight self-explanatory.
+ */
+export function UrgencyBadge({
+  urgent,
+  className,
+}: {
+  urgent: boolean;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+        urgent
+          ? "border-hot/30 bg-hot/15 text-hot"
+          : "border-warn/30 bg-warn/15 text-warn",
+        className,
+      )}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {urgent ? "Urgent" : "Expiring soon"}
+    </span>
+  );
+}

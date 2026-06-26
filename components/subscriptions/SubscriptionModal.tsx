@@ -10,6 +10,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import {
   SubscriptionForm,
   type SubscriptionFormValues,
 } from "./SubscriptionForm";
@@ -67,28 +74,45 @@ export function SubscriptionModal({
     },
   });
 
+  const title = editing ? "Edit subscription" : "Add subscription";
+  const description = editing
+    ? "Update the details for this tool."
+    : "Track a new tool and its renewal.";
+
+  const form = (
+    <SubscriptionForm
+      key={editing?.id ?? "new"}
+      departments={departments}
+      initial={editing ?? undefined}
+      submitting={mutation.isPending}
+      onSubmit={(values) => mutation.mutate(values)}
+      onCancel={() => onOpenChange(false)}
+    />
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {editing ? "Edit subscription" : "Add subscription"}
-          </DialogTitle>
-          <DialogDescription>
-            {editing
-              ? "Update the details for this tool."
-              : "Track a new tool and its renewal."}
-          </DialogDescription>
-        </DialogHeader>
-        <SubscriptionForm
-          key={editing?.id ?? "new"}
-          departments={departments}
-          initial={editing ?? undefined}
-          submitting={mutation.isPending}
-          onSubmit={(values) => mutation.mutate(values)}
-          onCancel={() => onOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
+    <>
+      {/* Mobile: bottom sheet */}
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="sm:hidden">
+          <DrawerHeader className="mb-4">
+            <DrawerTitle>{title}</DrawerTitle>
+            <DrawerDescription>{description}</DrawerDescription>
+          </DrawerHeader>
+          {form}
+        </DrawerContent>
+      </Drawer>
+
+      {/* Desktop: centered dialog */}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="hidden sm:block sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          {form}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

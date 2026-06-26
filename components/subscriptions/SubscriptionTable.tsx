@@ -38,7 +38,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "./StatusBadge";
+import { StatusBadge, UrgencyBadge } from "./StatusBadge";
+import { isRowExpiringSoon } from "@/lib/subscriptions";
 import { formatDate, formatIDR, type Subscription } from "@/lib/types";
 import { SUB_STATUS_VALUES } from "@/lib/validation";
 import { usePreferences } from "@/lib/hooks/use-preferences";
@@ -242,7 +243,17 @@ export function SubscriptionTable({
                   {formatIDR(sub.monthlyCost)}
                 </TableCell>
                 <TableCell>
-                  <StatusBadge status={sub.effectiveStatus} />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <StatusBadge status={sub.effectiveStatus} />
+                    {isRowExpiringSoon(sub, expiringThresholdDays) && (
+                      <UrgencyBadge
+                        urgent={
+                          sub.daysUntilRenewal !== null &&
+                          sub.daysUntilRenewal <= urgentThresholdDays
+                        }
+                      />
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>{renderActions(sub)}</TableCell>
               </TableRow>
@@ -255,11 +266,18 @@ export function SubscriptionTable({
       <ul className="flex flex-col gap-2 lg:hidden">
         {sortedRows.map((sub) => (
           <li key={sub.id}>
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onEdit(sub)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onEdit(sub);
+                }
+              }}
               className={cn(
-                "flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors active:bg-muted/50",
+                "flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors active:bg-muted/50",
                 highlightFor(sub, expiringThresholdDays, urgentThresholdDays),
               )}
             >
@@ -267,6 +285,14 @@ export function SubscriptionTable({
                 <div className="flex items-center gap-2">
                   <span className="truncate font-medium">{sub.toolName}</span>
                   <StatusBadge status={sub.effectiveStatus} />
+                  {isRowExpiringSoon(sub, expiringThresholdDays) && (
+                    <UrgencyBadge
+                      urgent={
+                        sub.daysUntilRenewal !== null &&
+                        sub.daysUntilRenewal <= urgentThresholdDays
+                      }
+                    />
+                  )}
                 </div>
                 <p className="mt-0.5 truncate text-sm text-muted-foreground">
                   {sub.department}
@@ -282,7 +308,7 @@ export function SubscriptionTable({
                 </div>
               </div>
               {renderActions(sub, "-mr-2 shrink-0")}
-            </button>
+            </div>
           </li>
         ))}
       </ul>
