@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RenewalRadar } from "@/components/dashboard/RenewalRadar";
+import { ExpiringList } from "@/components/dashboard/ExpiringList";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatIDR, type Stats, type Subscription } from "@/lib/types";
 
@@ -83,6 +84,12 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {subsQuery.isLoading ? (
+        <Skeleton className="h-[200px] rounded-xl" />
+      ) : (
+        <ExpiringList subscriptions={subsQuery.data ?? []} />
+      )}
     </div>
   );
 }
