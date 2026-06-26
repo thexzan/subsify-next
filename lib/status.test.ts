@@ -3,6 +3,8 @@ import {
   computeEffectiveStatus,
   daysUntilRenewal,
   isWithinDays,
+  isExpiringSoon,
+  isUrgent,
 } from "@/lib/status";
 
 // Fixed reference point so tests never depend on the wall clock.
@@ -61,7 +63,7 @@ describe("computeEffectiveStatus", () => {
   });
 
   describe("null renewal date keeps the manual status", () => {
-    it.each(["active", "expiring_soon", "expired"] as const)(
+    it.each(["active", "expired"] as const)(
       "%s with no date is unchanged",
       (status) => {
         expect(computeEffectiveStatus(status, null, NOW)).toBe(status);
@@ -69,35 +71,20 @@ describe("computeEffectiveStatus", () => {
     );
   });
 
-  describe("date escalates urgency", () => {
+  describe("lifecycle is only active / expired / cancelled", () => {
+    it("active with a renewal soon stays active (not a separate bucket)", () => {
+      expect(computeEffectiveStatus("active", inDays(30), NOW)).toBe("active");
+      expect(computeEffectiveStatus("active", inDays(7), NOW)).toBe("active");
+      expect(computeEffectiveStatus("active", inDays(0), NOW)).toBe("active");
+    });
+
     it("active with a past-due date becomes expired", () => {
       expect(computeEffectiveStatus("active", inDays(-1), NOW)).toBe("expired");
     });
 
-    it("active within 30 days becomes expiring_soon", () => {
-      expect(computeEffectiveStatus("active", inDays(30), NOW)).toBe("expiring_soon");
-      expect(computeEffectiveStatus("active", inDays(7), NOW)).toBe("expiring_soon");
-    });
-
-    it("active today (0 days) becomes expiring_soon, not expired", () => {
-      expect(computeEffectiveStatus("active", inDays(0), NOW)).toBe("expiring_soon");
-    });
-
-    it("expiring_soon (manual) with a past-due date escalates to expired", () => {
-      expect(computeEffectiveStatus("expiring_soon", inDays(-1), NOW)).toBe("expired");
-    });
-  });
-
-  describe("date never lowers urgency", () => {
     it("active with a far-future date stays active", () => {
       expect(computeEffectiveStatus("active", inDays(31), NOW)).toBe("active");
       expect(computeEffectiveStatus("active", inDays(365), NOW)).toBe("active");
-    });
-
-    it("manual expiring_soon stays expiring_soon when the date looks calm", () => {
-      expect(computeEffectiveStatus("expiring_soon", inDays(90), NOW)).toBe(
-        "expiring_soon",
-      );
     });
 
     it("manual expired stays expired even with a future date", () => {
@@ -105,14 +92,44 @@ describe("computeEffectiveStatus", () => {
       expect(computeEffectiveStatus("expired", inDays(5), NOW)).toBe("expired");
     });
   });
+});
 
-  describe("30/31 day boundary", () => {
-    it("exactly 30 days is expiring_soon", () => {
-      expect(computeEffectiveStatus("active", inDays(30), NOW)).toBe("expiring_soon");
-    });
+describe("isExpiringSoon (derived flag over active rows)", () => {
+  it("is true for active rows within the threshold (inclusive)", () => {
+    expect(isExpiringSoon("active", inDays(0), 30, NOW)).toBe(true);
+    expect(isExpiringSoon("active", inDays(30), 30, NOW)).toBe(true);
+  });
 
-    it("31 days is active", () => {
-      expect(computeEffectiveStatus("active", inDays(31), NOW)).toBe("active");
-    });
+  it("is false beyond the threshold", () => {
+    expect(isExpiringSoon("active", inDays(31), 30, NOW)).toBe(false);
+  });
+
+  it("respects a custom threshold", () => {
+    expect(isExpiringSoon("active", inDays(45), 60, NOW)).toBe(true);
+    expect(isExpiringSoon("active", inDays(45), 30, NOW)).toBe(false);
+  });
+
+  it("is false for expired or cancelled rows", () => {
+    expect(isExpiringSoon("expired", inDays(5), 30, NOW)).toBe(false);
+    expect(isExpiringSoon("cancelled", inDays(5), 30, NOW)).toBe(false);
+  });
+
+  it("is false with no renewal date", () => {
+    expect(isExpiringSoon("active", null, 30, NOW)).toBe(false);
+  });
+});
+
+describe("isUrgent (tighter band inside expiring soon)", () => {
+  it("is true within the urgent window", () => {
+    expect(isUrgent("active", inDays(7), 7, NOW)).toBe(true);
+    expect(isUrgent("active", inDays(0), 7, NOW)).toBe(true);
+  });
+
+  it("is false beyond the urgent window", () => {
+    expect(isUrgent("active", inDays(8), 7, NOW)).toBe(false);
+  });
+
+  it("is false for non-active rows", () => {
+    expect(isUrgent("expired", inDays(3), 7, NOW)).toBe(false);
   });
 });

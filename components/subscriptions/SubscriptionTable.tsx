@@ -3,7 +3,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -34,41 +41,44 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
 import { formatDate, formatIDR, type Subscription } from "@/lib/types";
 import { SUB_STATUS_VALUES } from "@/lib/validation";
+import { usePreferences } from "@/lib/hooks/use-preferences";
 import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Active",
-  expiring_soon: "Expiring soon",
   expired: "Expired",
   cancelled: "Cancelled",
 };
 
-function daysUntil(iso: string | null): number | null {
-  if (!iso) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(iso);
-  target.setHours(0, 0, 0, 0);
-  return Math.floor((target.getTime() - today.getTime()) / 86_400_000);
-}
-
-function rowHighlight(sub: Subscription): string {
-  if (sub.effectiveStatus === "cancelled") return "";
-  const days = daysUntil(sub.renewalDate);
+/**
+ * Tailwind background tint for a row/card based on renewal urgency, using the
+ * user's configured thresholds. Returns "" when there's nothing to flag.
+ */
+function highlightFor(
+  sub: Subscription,
+  expiring: number,
+  urgent: number,
+): string {
+  if (sub.effectiveStatus !== "active") return "";
+  const days = sub.daysUntilRenewal;
   if (days === null || days < 0) return "";
-  if (days <= 7) return "bg-hot/5";
-  if (days <= 30) return "bg-warn/5";
+  if (days <= urgent) return "bg-hot/5";
+  if (days <= expiring) return "bg-warn/5";
   return "";
 }
 
-type SortKey = "toolName" | "department" | "renewalDate" | "monthlyCost" | "effectiveStatus";
+type SortKey =
+  | "toolName"
+  | "department"
+  | "renewalDate"
+  | "monthlyCost"
+  | "effectiveStatus";
 type SortDir = "asc" | "desc";
 
 const STATUS_ORDER: Record<string, number> = {
   expired: 0,
-  expiring_soon: 1,
-  active: 2,
-  cancelled: 3,
+  active: 1,
+  cancelled: 2,
 };
 
 function compareRows(a: Subscription, b: Subscription, key: SortKey): number {
@@ -76,8 +86,6 @@ function compareRows(a: Subscription, b: Subscription, key: SortKey): number {
     case "monthlyCost":
       return a.monthlyCost - b.monthlyCost;
     case "renewalDate": {
-      // Nulls sort last regardless of direction is handled by caller; here put
-      // null as +Infinity so ascending pushes them to the bottom.
       const av = a.renewalDate ? new Date(a.renewalDate).getTime() : Infinity;
       const bv = b.renewalDate ? new Date(b.renewalDate).getTime() : Infinity;
       return av - bv;
@@ -97,6 +105,7 @@ export function SubscriptionTable({
   onEdit: (sub: Subscription) => void;
 }) {
   const queryClient = useQueryClient();
+  const { expiringThresholdDays, urgentThresholdDays } = usePreferences();
   const [deleteTarget, setDeleteTarget] = useState<Subscription | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
 
@@ -158,9 +167,53 @@ export function SubscriptionTable({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const renderActions = (sub: Subscription, triggerClass?: string) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("h-11 w-11 lg:h-8 lg:w-8", triggerClass)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => onEdit(sub)}>
+          <Pencil className="h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          Set status
+        </DropdownMenuLabel>
+        {SUB_STATUS_VALUES.map((s) => (
+          <DropdownMenuItem
+            key={s}
+            disabled={s === sub.status}
+            onClick={() => statusMutation.mutate({ sub, status: s })}
+          >
+            {STATUS_LABELS[s]}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => setDeleteTarget(sub)}
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      {/* Desktop: table */}
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card lg:block">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -174,7 +227,10 @@ export function SubscriptionTable({
           </TableHeader>
           <TableBody>
             {sortedRows.map((sub) => (
-              <TableRow key={sub.id} className={cn(rowHighlight(sub))}>
+              <TableRow
+                key={sub.id}
+                className={cn(highlightFor(sub, expiringThresholdDays, urgentThresholdDays))}
+              >
                 <TableCell className="font-medium">{sub.toolName}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {sub.department}
@@ -188,50 +244,48 @@ export function SubscriptionTable({
                 <TableCell>
                   <StatusBadge status={sub.effectiveStatus} />
                 </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Actions</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(sub)}>
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-xs text-muted-foreground">
-                        Set status
-                      </DropdownMenuLabel>
-                      {SUB_STATUS_VALUES.map((s) => (
-                        <DropdownMenuItem
-                          key={s}
-                          disabled={s === sub.status}
-                          onClick={() =>
-                            statusMutation.mutate({ sub, status: s })
-                          }
-                        >
-                          {STATUS_LABELS[s]}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => setDeleteTarget(sub)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                <TableCell>{renderActions(sub)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile: card list (tap a card to edit; the ⋮ menu has its own area) */}
+      <ul className="flex flex-col gap-2 lg:hidden">
+        {sortedRows.map((sub) => (
+          <li key={sub.id}>
+            <button
+              type="button"
+              onClick={() => onEdit(sub)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors active:bg-muted/50",
+                highlightFor(sub, expiringThresholdDays, urgentThresholdDays),
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-medium">{sub.toolName}</span>
+                  <StatusBadge status={sub.effectiveStatus} />
+                </div>
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                  {sub.department}
+                </p>
+                <div className="mt-2 flex items-center gap-3 text-sm">
+                  <span className="tabular font-medium">
+                    {formatIDR(sub.monthlyCost)}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="tabular font-mono text-xs text-muted-foreground">
+                    {formatDate(sub.renewalDate)}
+                  </span>
+                </div>
+              </div>
+              {renderActions(sub, "-mr-2 shrink-0")}
+            </button>
+          </li>
+        ))}
+      </ul>
 
       <AlertDialog
         open={!!deleteTarget}

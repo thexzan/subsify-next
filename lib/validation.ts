@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-export const SUB_STATUS_VALUES = [
-  "active",
-  "expiring_soon",
-  "expired",
-  "cancelled",
-] as const;
+export const SUB_STATUS_VALUES = ["active", "expired", "cancelled"] as const;
 
 export const subscriptionInputSchema = z.object({
   toolName: z.string().trim().min(1, "Tool name is required").max(100),

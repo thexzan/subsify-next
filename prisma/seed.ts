@@ -32,7 +32,7 @@ async function main() {
     { toolName: "Figma", department: "Design", renewalDate: daysFromNow(25), monthlyCost: 225000, status: SubStatus.active, notes: null },
     { toolName: "Slack", department: "All", renewalDate: daysFromNow(-10), monthlyCost: 500000, status: SubStatus.active, notes: "Company-wide comms" },
     { toolName: "Google Workspace", department: "All", renewalDate: daysFromNow(60), monthlyCost: 1200000, status: SubStatus.active, notes: null },
-    { toolName: "Semrush", department: "Marketing", renewalDate: daysFromNow(3), monthlyCost: 800000, status: SubStatus.expiring_soon, notes: "SEO tooling" },
+    { toolName: "Semrush", department: "Marketing", renewalDate: daysFromNow(3), monthlyCost: 800000, status: SubStatus.active, notes: "SEO tooling" },
     { toolName: "Zoom", department: "HR", renewalDate: daysFromNow(120), monthlyCost: 210000, status: SubStatus.active, notes: null },
     { toolName: "Adobe CC", department: "Design", renewalDate: daysFromNow(-40), monthlyCost: 350000, status: SubStatus.expired, notes: "Creative suite" },
     { toolName: "Linear", department: "Engineering", renewalDate: daysFromNow(90), monthlyCost: 180000, status: SubStatus.active, notes: null },

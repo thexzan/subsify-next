@@ -162,7 +162,8 @@ export function buildOpenApiDocument() {
                 type: "string",
                 enum: ["active", "expiring_soon", "expired", "cancelled"],
               },
-              description: "Filter by effective status",
+              description:
+                "Filter by status. Lifecycle values (active, expired, cancelled) plus the derived 'expiring_soon' (active rows renewing within the user's threshold).",
             },
             {
               name: "search",

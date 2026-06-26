@@ -34,7 +34,6 @@ export type SubscriptionFormValues = z.infer<typeof formSchema>;
 
 const STATUS_LABELS: Record<(typeof SUB_STATUS_VALUES)[number], string> = {
   active: "Active",
-  expiring_soon: "Expiring soon",
   expired: "Expired",
   cancelled: "Cancelled",
 };

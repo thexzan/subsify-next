@@ -2,10 +2,22 @@ import { SubStatus } from "@/app/generated/prisma/client";
 
 export type EffectiveStatus = SubStatus;
 
+export const DEFAULT_EXPIRING_THRESHOLD = 30;
+export const DEFAULT_URGENT_THRESHOLD = 7;
+
+export type Thresholds = {
+  expiring: number;
+  urgent: number;
+};
+
+export const DEFAULT_THRESHOLDS: Thresholds = {
+  expiring: DEFAULT_EXPIRING_THRESHOLD,
+  urgent: DEFAULT_URGENT_THRESHOLD,
+};
+
 const URGENCY: Record<SubStatus, number> = {
   active: 1,
-  expiring_soon: 2,
-  expired: 3,
+  expired: 2,
   cancelled: 0,
 };
 
@@ -38,14 +50,17 @@ export function isWithinDays(
 }
 
 /**
- * Resolves the status shown across the app.
+ * Resolves the lifecycle status shown across the app.
+ *
+ * Lifecycle is exactly active / expired / cancelled. "Expiring soon" is NOT a
+ * lifecycle state — it's a derived flag over `active` rows (see isExpiringSoon),
+ * so a subscription that renews soon is still active.
  *
  * Rules:
  * - `cancelled` is set manually and always wins.
  * - With no renewal date, the manual status stands.
- * - Otherwise the date can only *raise* urgency (past due -> expired,
- *   within 30 days -> expiring_soon), never lower it. This keeps each row
- *   in exactly one bucket so summary cards never double-count.
+ * - Otherwise the date can only *raise* urgency (past due -> expired), never
+ *   lower it.
  */
 export function computeEffectiveStatus(
   status: SubStatus,
@@ -56,8 +71,35 @@ export function computeEffectiveStatus(
   if (!renewalDate) return status;
 
   const days = daysUntilRenewal(renewalDate, now);
-  const dateStatus: SubStatus =
-    days < 0 ? "expired" : days <= 30 ? "expiring_soon" : "active";
+  const dateStatus: SubStatus = days < 0 ? "expired" : "active";
 
   return URGENCY[dateStatus] > URGENCY[status] ? dateStatus : status;
+}
+
+/**
+ * An active subscription whose renewal falls within `threshold` days (inclusive,
+ * not past due). Derived — never stored. Expired/cancelled rows are never
+ * "expiring soon".
+ */
+export function isExpiringSoon(
+  effectiveStatus: EffectiveStatus,
+  renewalDate: Date | null,
+  threshold: number = DEFAULT_EXPIRING_THRESHOLD,
+  now: Date = new Date(),
+): boolean {
+  if (effectiveStatus !== "active") return false;
+  return isWithinDays(renewalDate, threshold, now);
+}
+
+/**
+ * The tighter band inside "expiring soon" used for hot highlighting.
+ */
+export function isUrgent(
+  effectiveStatus: EffectiveStatus,
+  renewalDate: Date | null,
+  threshold: number = DEFAULT_URGENT_THRESHOLD,
+  now: Date = new Date(),
+): boolean {
+  if (effectiveStatus !== "active") return false;
+  return isWithinDays(renewalDate, threshold, now);
 }

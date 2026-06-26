@@ -10,6 +10,7 @@ import {
   Receipt,
   LogOut,
   UserCog,
+  Settings,
   ChevronsUpDown,
   PanelLeftClose,
   PanelLeftOpen,
@@ -164,6 +165,12 @@ function UserMenu({ variant = "full" }: { variant?: "full" | "avatar" }) {
           <DropdownMenuItem onClick={() => setAccountOpen(true)}>
             <UserCog className="h-4 w-4" />
             Account
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>

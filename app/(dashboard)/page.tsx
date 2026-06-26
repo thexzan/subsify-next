@@ -1,11 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RenewalRadar } from "@/components/dashboard/RenewalRadar";
 import { ExpiringList } from "@/components/dashboard/ExpiringList";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ErrorState";
+import { useSubscriptionModal } from "@/components/subscriptions/SubscriptionModalProvider";
 import { formatIDR, type Stats, type Subscription } from "@/lib/types";
 
 async function fetchJSON<T>(url: string): Promise<T> {
@@ -15,6 +18,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
 }
 
 export default function DashboardPage() {
+  const { openAdd } = useSubscriptionModal();
   const statsQuery = useQuery({
     queryKey: ["stats"],
     queryFn: () => fetchJSON<Stats>("/api/stats"),
@@ -28,11 +32,17 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Overview of your subscriptions and what needs attention.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Overview of your subscriptions and what needs attention.
+          </p>
+        </div>
+        <Button size="sm" className="hidden lg:inline-flex" onClick={openAdd}>
+          <Plus className="h-4 w-4" />
+          Add subscription
+        </Button>
       </header>
 
       {statsQuery.isError || subsQuery.isError ? (

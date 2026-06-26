@@ -13,17 +13,28 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const now = new Date();
-    const all = await prisma.subscription.findMany({
-      where: { userId: Number(user.id) },
-      orderBy: [{ renewalDate: "asc" }, { id: "asc" }],
-    });
+    const userId = Number(user.id);
+    const [prefs, all] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { expiringThresholdDays: true },
+      }),
+      prisma.subscription.findMany({
+        where: { userId },
+        orderBy: [{ renewalDate: "asc" }, { id: "asc" }],
+      }),
+    ]);
 
     const serialized = all.map((s) => serializeSubscription(s, now));
-    const result = filterSubscriptions(serialized, {
-      status: searchParams.get("status"),
-      search: searchParams.get("search"),
-      department: searchParams.get("department"),
-    });
+    const result = filterSubscriptions(
+      serialized,
+      {
+        status: searchParams.get("status"),
+        search: searchParams.get("search"),
+        department: searchParams.get("department"),
+      },
+      prefs?.expiringThresholdDays,
+    );
 
     return NextResponse.json(result);
   } catch {

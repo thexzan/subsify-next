@@ -7,7 +7,6 @@ import type { Subscription } from "@/lib/types";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
-  expiring_soon: "Expiring Soon",
   expired: "Expired",
   cancelled: "Cancelled",
 };

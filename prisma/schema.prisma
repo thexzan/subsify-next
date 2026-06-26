@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  name          String         @db.VarChar(100)
-  email         String         @unique @db.VarChar(100)
-  password      String         @db.VarChar(255)
-  createdAt     DateTime       @default(now()) @map("created_at")
-  subscriptions Subscription[]
+  id                    Int            @id @default(autoincrement())
+  name                  String         @db.VarChar(100)
+  email                 String         @unique @db.VarChar(100)
+  password              String         @db.VarChar(255)
+  expiringThresholdDays Int            @default(30) @map("expiring_threshold_days")
+  urgentThresholdDays   Int            @default(7) @map("urgent_threshold_days")
+  createdAt             DateTime       @default(now()) @map("created_at")
+  subscriptions         Subscription[]
 
   @@map("users")
 }
 
 enum SubStatus {
   active
-  expiring_soon
   expired
   cancelled
 }

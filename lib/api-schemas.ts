@@ -9,6 +9,7 @@ export const subscriptionResponseSchema = z.object({
   monthlyCost: z.number(),
   status: z.enum(SUB_STATUS_VALUES),
   effectiveStatus: z.enum(SUB_STATUS_VALUES),
+  daysUntilRenewal: z.number().nullable(),
   notes: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -60,3 +61,18 @@ export const profileInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
   email: z.string().trim().toLowerCase().email("Enter a valid email").max(100),
 });
+
+export const preferencesResponseSchema = z.object({
+  expiringThresholdDays: z.number(),
+  urgentThresholdDays: z.number(),
+});
+
+export const preferencesInputSchema = z
+  .object({
+    expiringThresholdDays: z.coerce.number().int().min(1).max(365),
+    urgentThresholdDays: z.coerce.number().int().min(1).max(365),
+  })
+  .refine((v) => v.urgentThresholdDays <= v.expiringThresholdDays, {
+    message: "Urgent threshold must be less than or equal to expiring threshold",
+    path: ["urgentThresholdDays"],
+  });

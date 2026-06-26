@@ -1,18 +1,21 @@
 "use client";
 
-import { daysUntilRenewal } from "@/lib/status";
-import { formatIDR, type Subscription } from "@/lib/types";
+import { type Subscription } from "@/lib/types";
+import { formatIDR } from "@/lib/types";
 import { StatusBadge } from "@/components/subscriptions/StatusBadge";
+import { isRowExpiringSoon } from "@/lib/subscriptions";
+import { usePreferences } from "@/lib/hooks/use-preferences";
 
 export function ExpiringList({
   subscriptions,
 }: {
   subscriptions: Subscription[];
 }) {
-  const now = new Date();
+  const { expiringThresholdDays, urgentThresholdDays } = usePreferences();
+
   const expiring = subscriptions
-    .filter((s) => s.effectiveStatus === "expiring_soon" && s.renewalDate)
-    .map((s) => ({ sub: s, days: daysUntilRenewal(new Date(s.renewalDate!), now) }))
+    .filter((s) => isRowExpiringSoon(s, expiringThresholdDays))
+    .map((s) => ({ sub: s, days: s.daysUntilRenewal ?? 0 }))
     .sort((a, b) => a.days - b.days);
 
   return (
@@ -21,7 +24,7 @@ export function ExpiringList({
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Expiring soon</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Subscriptions renewing within 30 days
+            Subscriptions renewing within {expiringThresholdDays} days
           </p>
         </div>
         <span className="tabular text-xs font-medium text-muted-foreground">
@@ -31,7 +34,7 @@ export function ExpiringList({
 
       {expiring.length === 0 ? (
         <p className="mt-8 mb-4 text-center text-sm text-muted-foreground">
-          Nothing expiring in the next 30 days.
+          Nothing expiring in the next {expiringThresholdDays} days.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col divide-y divide-border">
@@ -53,7 +56,7 @@ export function ExpiringList({
                 <span
                   className={
                     "tabular font-mono text-xs " +
-                    (days <= 7 ? "text-hot" : "text-warn")
+                    (days <= urgentThresholdDays ? "text-hot" : "text-warn")
                   }
                 >
                   {days}d

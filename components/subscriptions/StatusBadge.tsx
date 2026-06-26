@@ -6,10 +6,6 @@ const STATUS_META: Record<SubStatus, { label: string; className: string }> = {
     label: "Active",
     className: "bg-calm/15 text-calm border-calm/30",
   },
-  expiring_soon: {
-    label: "Expiring soon",
-    className: "bg-warn/15 text-warn border-warn/30",
-  },
   expired: {
     label: "Expired",
     className: "bg-hot/15 text-hot border-hot/30",

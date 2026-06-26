@@ -11,10 +11,18 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const all = await prisma.subscription.findMany({
-      where: { userId: Number(user.id) },
-    });
-    const stats = computeStats(all.map((s) => serializeSubscription(s, now)));
+    const userId = Number(user.id);
+    const [prefs, all] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { expiringThresholdDays: true },
+      }),
+      prisma.subscription.findMany({ where: { userId } }),
+    ]);
+    const stats = computeStats(
+      all.map((s) => serializeSubscription(s, now)),
+      prefs?.expiringThresholdDays,
+    );
     return NextResponse.json(stats);
   } catch {
     return internalError();

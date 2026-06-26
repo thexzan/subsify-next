@@ -14,18 +14,11 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SubscriptionTable } from "@/components/subscriptions/SubscriptionTable";
-import { SubscriptionModal } from "@/components/subscriptions/SubscriptionModal";
+import { StatusTabs, type StatusFilter } from "@/components/subscriptions/StatusTabs";
+import { useSubscriptionModal } from "@/components/subscriptions/SubscriptionModalProvider";
 import { ExportButton } from "@/components/subscriptions/ExportButton";
 import { ErrorState } from "@/components/ErrorState";
 import type { Subscription } from "@/lib/types";
-
-const STATUS_OPTIONS = [
-  { value: "all", label: "All statuses" },
-  { value: "active", label: "Active" },
-  { value: "expiring_soon", label: "Expiring soon" },
-  { value: "expired", label: "Expired" },
-  { value: "cancelled", label: "Cancelled" },
-] as const;
 
 function useDebounced<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
@@ -37,11 +30,10 @@ function useDebounced<T>(value: T, delay = 300): T {
 }
 
 export default function SubscriptionsPage() {
+  const { openAdd, openEdit } = useSubscriptionModal();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
   const [department, setDepartment] = useState<string>("all");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Subscription | null>(null);
 
   const debouncedSearch = useDebounced(search);
 
@@ -85,15 +77,6 @@ export default function SubscriptionsPage() {
   const hasFilters =
     debouncedSearch !== "" || status !== "all" || department !== "all";
 
-  function openAdd() {
-    setEditing(null);
-    setModalOpen(true);
-  }
-  function openEdit(sub: Subscription) {
-    setEditing(sub);
-    setModalOpen(true);
-  }
-
   return (
     <div className="mx-auto max-w-[1100px] space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -105,7 +88,7 @@ export default function SubscriptionsPage() {
         </div>
         <div className="flex items-center gap-2">
           <ExportButton rows={rows} />
-          <Button size="sm" onClick={openAdd}>
+          <Button size="sm" className="hidden lg:inline-flex" onClick={openAdd}>
             <Plus className="h-4 w-4" />
             Add subscription
           </Button>
@@ -113,41 +96,32 @@ export default function SubscriptionsPage() {
       </header>
 
       {/* Toolbar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tool or department…"
-            className="pl-9"
-          />
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tool or department…"
+              className="h-11 pl-9 sm:h-10"
+            />
+          </div>
+          <Select value={department} onValueChange={setDepartment}>
+            <SelectTrigger className="h-11 sm:h-10 sm:w-44">
+              <SelectValue placeholder="All departments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All departments</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="sm:w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={department} onValueChange={setDepartment}>
-          <SelectTrigger className="sm:w-44">
-            <SelectValue placeholder="All departments" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All departments</SelectItem>
-            {departments.map((d) => (
-              <SelectItem key={d} value={d}>
-                {d}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <StatusTabs value={status} onChange={setStatus} />
       </div>
 
       {/* Content */}
@@ -174,13 +148,6 @@ export default function SubscriptionsPage() {
           <SubscriptionTable rows={rows} onEdit={openEdit} />
         </div>
       )}
-
-      <SubscriptionModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        editing={editing}
-        departments={departments}
-      />
     </div>
   );
 }

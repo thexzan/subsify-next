@@ -13,19 +13,22 @@ function sub(
     monthlyCost: over.monthlyCost ?? 100000,
     status: over.status ?? "active",
     effectiveStatus: over.effectiveStatus ?? over.status ?? "active",
+    daysUntilRenewal: over.daysUntilRenewal ?? null,
     notes: over.notes ?? null,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   };
 }
 
+// Notion & Loom are active; Notion renews in 10 days (expiring soon under a
+// 30-day threshold), Loom in 200 (active but not expiring soon).
 const ROWS: SerializedSubscription[] = [
-  sub({ id: 1, toolName: "Notion", department: "Engineering", effectiveStatus: "expiring_soon", monthlyCost: 160000 }),
-  sub({ id: 2, toolName: "Figma", department: "Design", effectiveStatus: "active", monthlyCost: 225000 }),
-  sub({ id: 3, toolName: "Slack", department: "All", effectiveStatus: "expired", monthlyCost: 500000 }),
-  sub({ id: 4, toolName: "Adobe CC", department: "Design", effectiveStatus: "expired", monthlyCost: 350000 }),
+  sub({ id: 1, toolName: "Notion", department: "Engineering", effectiveStatus: "active", daysUntilRenewal: 10, monthlyCost: 160000 }),
+  sub({ id: 2, toolName: "Figma", department: "Design", effectiveStatus: "active", daysUntilRenewal: 200, monthlyCost: 225000 }),
+  sub({ id: 3, toolName: "Slack", department: "All", effectiveStatus: "expired", daysUntilRenewal: -5, monthlyCost: 500000 }),
+  sub({ id: 4, toolName: "Adobe CC", department: "Design", effectiveStatus: "expired", daysUntilRenewal: -40, monthlyCost: 350000 }),
   sub({ id: 5, toolName: "HubSpot", department: "Marketing", effectiveStatus: "cancelled", monthlyCost: 1500000 }),
-  sub({ id: 6, toolName: "Loom", department: "All", effectiveStatus: "active", monthlyCost: 120000 }),
+  sub({ id: 6, toolName: "Loom", department: "All", effectiveStatus: "active", daysUntilRenewal: 200, monthlyCost: 120000 }),
 ];
 
 describe("filterSubscriptions", () => {
@@ -36,6 +39,21 @@ describe("filterSubscriptions", () => {
   it("filters by effective status", () => {
     const expired = filterSubscriptions(ROWS, { status: "expired" });
     expect(expired.map((s) => s.toolName).sort()).toEqual(["Adobe CC", "Slack"]);
+  });
+
+  it("'active' includes expiring-soon rows (they are still active)", () => {
+    const active = filterSubscriptions(ROWS, { status: "active" });
+    expect(active.map((s) => s.toolName).sort()).toEqual(["Figma", "Loom", "Notion"]);
+  });
+
+  it("'expiring_soon' is the subset of active rows within the threshold", () => {
+    const soon = filterSubscriptions(ROWS, { status: "expiring_soon" }, 30);
+    expect(soon.map((s) => s.toolName)).toEqual(["Notion"]);
+  });
+
+  it("'expiring_soon' respects a custom threshold", () => {
+    const soon = filterSubscriptions(ROWS, { status: "expiring_soon" }, 5);
+    expect(soon).toEqual([]);
   });
 
   it("ignores an invalid status value (no filtering applied)", () => {
@@ -74,20 +92,21 @@ describe("filterSubscriptions", () => {
 });
 
 describe("computeStats", () => {
-  it("counts by effective status and they sum to total (no double-count)", () => {
-    const s = computeStats(ROWS);
+  it("active counts all active rows; expiring_soon is a subset; sums to total", () => {
+    const s = computeStats(ROWS, 30);
     expect(s.total).toBe(6);
-    expect(s.active).toBe(2);
-    expect(s.expiring_soon).toBe(1);
+    expect(s.active).toBe(3); // Notion, Figma, Loom
+    expect(s.expiring_soon).toBe(1); // Notion (subset of active)
     expect(s.expired).toBe(2);
     expect(s.cancelled).toBe(1);
-    expect(s.active + s.expiring_soon + s.expired + s.cancelled).toBe(s.total);
+    // expiring_soon is NOT a separate bucket, so lifecycle buckets sum to total.
+    expect(s.active + s.expired + s.cancelled).toBe(s.total);
   });
 
-  it("includes only active + expiring_soon in total monthly cost", () => {
-    // 225000 + 120000 (active) + 160000 (expiring_soon) = 505000
+  it("includes all active rows in total monthly cost", () => {
+    // 160000 (Notion) + 225000 (Figma) + 120000 (Loom) = 505000
     // excludes expired (Slack, Adobe) and cancelled (HubSpot)
-    expect(computeStats(ROWS).total_monthly_cost).toBe(505000);
+    expect(computeStats(ROWS, 30).total_monthly_cost).toBe(505000);
   });
 
   it("handles an empty dataset", () => {

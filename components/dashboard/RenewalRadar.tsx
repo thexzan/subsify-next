@@ -4,32 +4,23 @@ import { useMemo, useState } from "react";
 import type { Subscription } from "@/lib/types";
 import { formatIDR } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-const WINDOW_DAYS = 30;
-
-function daysUntil(iso: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(iso);
-  target.setHours(0, 0, 0, 0);
-  return Math.floor((target.getTime() - today.getTime()) / 86_400_000);
-}
-
-function toneFor(days: number): string {
-  if (days <= 7) return "var(--hot)";
-  return "var(--warn)";
-}
+import { usePreferences } from "@/lib/hooks/use-preferences";
 
 export function RenewalRadar({ subscriptions }: { subscriptions: Subscription[] }) {
+  const { expiringThresholdDays, urgentThresholdDays } = usePreferences();
+  const windowDays = expiringThresholdDays;
   const [hovered, setHovered] = useState<number | null>(null);
+
+  const toneFor = (days: number): string =>
+    days <= urgentThresholdDays ? "var(--hot)" : "var(--warn)";
 
   const upcoming = useMemo(() => {
     return subscriptions
       .filter((s) => s.renewalDate && s.effectiveStatus !== "cancelled")
-      .map((s) => ({ sub: s, days: daysUntil(s.renewalDate!) }))
-      .filter((x) => x.days >= 0 && x.days <= WINDOW_DAYS)
+      .map((s) => ({ sub: s, days: s.daysUntilRenewal ?? 0 }))
+      .filter((x) => x.days >= 0 && x.days <= windowDays)
       .sort((a, b) => a.days - b.days);
-  }, [subscriptions]);
+  }, [subscriptions, windowDays]);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
@@ -37,7 +28,7 @@ export function RenewalRadar({ subscriptions }: { subscriptions: Subscription[] 
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Renewal radar</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Renewals in the next {WINDOW_DAYS} days
+            Renewals in the next {windowDays} days
           </p>
         </div>
         <span className="tabular text-xs font-medium text-muted-foreground">
@@ -47,20 +38,20 @@ export function RenewalRadar({ subscriptions }: { subscriptions: Subscription[] 
 
       {upcoming.length === 0 ? (
         <p className="mt-8 mb-4 text-center text-sm text-muted-foreground">
-          Nothing due in the next {WINDOW_DAYS} days. You&apos;re clear.
+          Nothing due in the next {windowDays} days. You&apos;re clear.
         </p>
       ) : (
         <>
           {/* Desktop: time ruler */}
           <div className="mt-10 hidden sm:block">
             <div className="relative h-px w-full bg-border">
-              {/* 7-day urgency marker */}
+              {/* urgent-window marker */}
               <div
                 className="absolute -top-2 h-2 w-px bg-hot/40"
-                style={{ left: `${(7 / WINDOW_DAYS) * 100}%` }}
+                style={{ left: `${(urgentThresholdDays / windowDays) * 100}%` }}
               />
               {upcoming.map(({ sub, days }) => {
-                const left = `${Math.min((days / WINDOW_DAYS) * 100, 98)}%`;
+                const left = `${Math.min((days / windowDays) * 100, 98)}%`;
                 return (
                   <button
                     key={sub.id}
@@ -93,7 +84,7 @@ export function RenewalRadar({ subscriptions }: { subscriptions: Subscription[] 
             </div>
             <div className="mt-8 flex justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               <span>Today</span>
-              <span>+{WINDOW_DAYS} days</span>
+              <span>+{windowDays} days</span>
             </div>
           </div>
 
@@ -115,7 +106,7 @@ export function RenewalRadar({ subscriptions }: { subscriptions: Subscription[] 
                   <span
                     className={cn(
                       "tabular font-mono text-xs",
-                      days <= 7 ? "text-hot" : "text-warn",
+                      days <= urgentThresholdDays ? "text-hot" : "text-warn",
                     )}
                   >
                     {days}d
