@@ -1,26 +1,138 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Urgency ramp — color encodes time-to-renewal (the brand) */
+  --color-calm: var(--calm);
+  --color-warn: var(--warn);
+  --color-hot: var(--hot);
+  --color-dead: var(--dead);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Light mode — calm paper control room */
+:root {
+  --background: #f7f8fb;
+  --foreground: #131826;
+  --card: #ffffff;
+  --card-foreground: #131826;
+  --popover: #ffffff;
+  --popover-foreground: #131826;
+  --primary: #6e8bff;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f7;
+  --secondary-foreground: #2a3548;
+  --muted: #eef1f7;
+  --muted-foreground: #66718a;
+  --accent: #6e8bff;
+  --accent-foreground: #ffffff;
+  --destructive: #e5453a;
+  --border: #e2e6ef;
+  --input: #e2e6ef;
+  --ring: #6e8bff;
+  --radius: 0.625rem;
+
+  --calm: #2f9d6e;
+  --warn: #d9920c;
+  --hot: #e5453a;
+  --dead: #8a95ac;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #131826;
+  --sidebar-primary: #6e8bff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f7;
+  --sidebar-accent-foreground: #2a3548;
+  --sidebar-border: #e2e6ef;
+  --sidebar-ring: #6e8bff;
+}
+
+/* Dark mode — the primary experience: slate control room */
+.dark {
+  --background: #0b0f1a;
+  --foreground: #e6eaf2;
+  --card: #141a28;
+  --card-foreground: #e6eaf2;
+  --popover: #141a28;
+  --popover-foreground: #e6eaf2;
+  --primary: #6e8bff;
+  --primary-foreground: #0b0f1a;
+  --secondary: #1d2536;
+  --secondary-foreground: #e6eaf2;
+  --muted: #1d2536;
+  --muted-foreground: #8a95ac;
+  --accent: #6e8bff;
+  --accent-foreground: #0b0f1a;
+  --destructive: #ff6b5e;
+  --border: #2a3548;
+  --input: #1d2536;
+  --ring: #6e8bff;
+
+  --calm: #3fb984;
+  --warn: #f5b544;
+  --hot: #ff6b5e;
+  --dead: #5b6678;
+
+  --sidebar: #0e1320;
+  --sidebar-foreground: #e6eaf2;
+  --sidebar-primary: #6e8bff;
+  --sidebar-primary-foreground: #0b0f1a;
+  --sidebar-accent: #1d2536;
+  --sidebar-accent-foreground: #e6eaf2;
+  --sidebar-border: #2a3548;
+  --sidebar-ring: #6e8bff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Figures align in columns — the detail that makes a tracker feel engineered */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }
