@@ -6,10 +6,11 @@ The backend is built API-first, so the same REST endpoints that power the web ap
 
 ## Features
 
-- **Dashboard** — summary counts (total, active, expiring soon, expired), total monthly spend, and a renewal radar plotting everything due in the next 30 days
+- **Dashboard** — summary counts (total, active, expiring soon, expired), total monthly spend, and a renewal radar plotting everything due within the configured window
 - **Subscription management** — add, edit, delete, and quick-change status; each tool tracks name, department, renewal date, monthly cost, status, and notes
-- **Search & filter** — search by tool or department; filter by status and department (server-side)
-- **Renewal alerts** — rows renewing within 7 days are flagged red, within 30 days amber
+- **Search & filter** — search by tool or department; filter by status (segmented tabs) and department (server-side)
+- **Renewal alerts** — rows renewing within the urgent window (default 7 days) are flagged red, within the expiring window (default 30 days) amber; both windows are user-configurable. Active rows approaching renewal show explicit "Expiring soon" / "Urgent" badges.
+- **Settings** — per-user configurable alert thresholds for expiring-soon and urgent windows
 - **CSV export** — export the currently filtered list
 - **Authentication** — credential-based login with protected pages
 - **REST API** — clean JSON endpoints, usable with either a session cookie or a Bearer token
@@ -25,9 +26,12 @@ The backend is built API-first, so the same REST endpoints that power the web ap
 
 ## Status model
 
-A subscription's status can be set manually, but the displayed status escalates automatically based on the renewal date: a past-due date shows as **expired**, and a date within 30 days shows as **expiring soon**. The automatic rule only ever raises urgency, never lowers it, and `cancelled` is always preserved. This keeps each subscription in exactly one bucket, so the dashboard counts always add up.
+Subscriptions have a stored lifecycle status — `active`, `expired`, or `cancelled` — but the displayed status is computed from the renewal date at query time.
 
-Monthly spend totals only subscriptions that are effectively active or expiring soon — expired and cancelled tools are excluded.
+- A past-due renewal date escalates the row to **expired**. The automatic rule only raises urgency, never lowers it, and `cancelled` is always preserved.
+- **Expiring soon** is not a stored status. It's a derived flag: a row is "expiring soon" when it's `active` and its renewal falls within the user's configured threshold (default 30 days). Filtering by `active` includes these rows; filtering by `expiring_soon` returns only that subset.
+- The dashboard **Active** count includes all active rows (including expiring-soon). The **Expiring soon** count is a subset — no double-counting.
+- Monthly spend totals all active rows (expired and cancelled are excluded).
 
 ## Getting started
 
@@ -83,6 +87,8 @@ All endpoints return JSON. Requests authenticate with either the session cookie 
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/auth/token` | Exchange credentials for a Bearer token |
+| `GET` | `/api/auth/preferences` | Get alert thresholds (expiring-soon and urgent windows) |
+| `PATCH` | `/api/auth/preferences` | Update alert thresholds |
 | `GET` | `/api/subscriptions` | List subscriptions (`?status=`, `?search=`, `?department=`) |
 | `POST` | `/api/subscriptions` | Create a subscription |
 | `GET` | `/api/subscriptions/:id` | Get one subscription |

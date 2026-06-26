@@ -9,6 +9,8 @@ import {
   changePasswordSchema,
   registerSchema,
   profileInputSchema,
+  preferencesResponseSchema,
+  preferencesInputSchema,
 } from "./api-schemas";
 
 // Derive JSON Schema from the same zod schemas the API validates with, so the
@@ -59,6 +61,8 @@ export function buildOpenApiDocument() {
         ChangePassword: jsonSchema(changePasswordSchema),
         RegisterInput: jsonSchema(registerSchema),
         ProfileInput: jsonSchema(profileInputSchema),
+        Preferences: jsonSchema(preferencesResponseSchema),
+        PreferencesInput: jsonSchema(preferencesInputSchema),
         Error: jsonSchema(errorResponseSchema),
       },
     },
@@ -126,6 +130,47 @@ export function buildOpenApiDocument() {
           responses: {
             "200": { description: "Password changed" },
             "400": errorResponse("Wrong current password or validation error"),
+            "401": errorResponse("Authentication required"),
+          },
+        },
+      },
+      "/api/auth/preferences": {
+        get: {
+          summary: "Get alert thresholds",
+          tags: ["Auth"],
+          responses: {
+            "200": {
+              description: "Current expiring-soon and urgent window settings",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Preferences" },
+                },
+              },
+            },
+            "401": errorResponse("Authentication required"),
+          },
+        },
+        patch: {
+          summary: "Update alert thresholds",
+          tags: ["Auth"],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/PreferencesInput" },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Updated thresholds",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Preferences" },
+                },
+              },
+            },
+            "400": errorResponse("Validation error"),
             "401": errorResponse("Authentication required"),
           },
         },
