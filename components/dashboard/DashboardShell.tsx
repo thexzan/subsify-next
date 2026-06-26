@@ -7,6 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { LayoutDashboard, Receipt, LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -81,6 +82,7 @@ function UserFooter() {
         <LogOut className="h-4 w-4" />
         Sign out
       </Button>
+      <ThemeToggle />
     </div>
   );
 }
