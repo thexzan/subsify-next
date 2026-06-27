@@ -1,8 +1,26 @@
-# Subsify
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/8641bb0f-8e8b-4264-89da-7789a210d565" width="120" alt="Subsify app icon" />
+
+  <h1>Subsify</h1>
+  <p>Track software subscriptions, costs, and renewal deadlines — no forgotten renewals, no billing surprises.</p>
+
+  <p>
+    <a href="https://github.com/thexzan/subsify-next/actions/workflows/ci.yml">
+      <img src="https://github.com/thexzan/subsify-next/actions/workflows/ci.yml/badge.svg" alt="CI" />
+    </a>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" />
+    </a>
+  </p>
+
+  <a href="https://apps.apple.com/us/app/subsify-subscription-tracker/id6785076420">
+    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="48" />
+  </a>
+</div>
 
 Subsify is an internal dashboard for tracking company software subscriptions, their costs, and renewal deadlines. It gives IT and operations staff a single place to see what's active, what's about to renew, and what's already lapsed — so a forgotten renewal never bills by surprise.
 
-The backend is built API-first, so the same REST endpoints that power the web app can serve a future mobile client.
+The backend is built API-first, so the same REST endpoints that power the web app serve both the dashboard and the native iOS client.
 
 ## Features
 
@@ -24,6 +42,23 @@ The backend is built API-first, so the same REST endpoints that power the web ap
 - Tailwind CSS + shadcn/ui
 - TanStack Query
 - Vitest, GitHub Actions CI
+
+## iOS app
+<a href="https://apps.apple.com/us/app/subsify-subscription-tracker/id6785076420">
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="40" />
+</a>
+
+A native iPhone app — offline-first, Face ID protected, zero third-party dependencies — synchronized with this API.
+
+> Submitted for App Store review in June 28, 2026 — the link may not resolve until approved.
+
+- Swift 6.3 + SwiftUI · iOS 18.0+ · iPhone-only · zero third-party packages
+- SwiftData (`@Model`) local-first persistence; `ModelActor` sync engine, two-phase push → pull
+- Plain `URLSession` async/await; JWT in Keychain
+- Local renewal notifications, Face ID / Touch ID app lock
+- Swift Testing, 67 unit tests
+
+The iOS client consumes the same JSON endpoints documented in the [REST API](#rest-api) section. The OpenAPI spec at `/api/openapi` can be used to generate a typed Swift client — see [Interactive docs & OpenAPI spec](#interactive-docs--openapi-spec).
 
 ## Status model
 
@@ -118,7 +153,7 @@ curl http://localhost:3000/api/subscriptions \
 - **Interactive docs:** `/api/docs` — a browsable API reference (Scalar) rendered from the live spec.
 - **OpenAPI spec:** `/api/openapi` — the OpenAPI 3.1 document as JSON. It's derived from the same zod schemas the API validates with, so the contract stays in sync with the code.
 
-The spec is machine-readable, so a future iOS client can generate a typed Swift client from it:
+The spec is machine-readable, so the native iOS client — or any consumer — can generate a typed Swift client from it:
 
 ```bash
 # Save the spec, then generate a client with Apple's swift-openapi-generator
@@ -145,3 +180,7 @@ The app ships as a standalone Docker image and deploys cleanly on Coolify:
    - `NEXTAUTH_URL` — your public app URL
    - `RUN_SEED` — `true` only for the very first deploy, then remove or set to `false`
 4. Deploy. The container runs `prisma migrate deploy` on startup, so the schema is created automatically.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
