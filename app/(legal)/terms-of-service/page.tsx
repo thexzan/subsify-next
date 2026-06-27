@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
 
       <SectionHeading>Service availability</SectionHeading>
       <Body>
-        Subsify is provided "as is" without warranty of any kind. We may modify,
+        Subsify is provided &ldquo;as is&rdquo; without warranty of any kind. We may modify,
         suspend, or discontinue the service at any time without notice. We are
         not liable for any loss resulting from service interruptions.
       </Body>
@@ -81,7 +81,7 @@ export default function TermsOfServicePage() {
 
       <SectionHeading>Changes to these terms</SectionHeading>
       <Body>
-        We may update these terms from time to time. The "last updated" date at
+        We may update these terms from time to time. The &ldquo;last updated&rdquo; date at
         the top of this page reflects the most recent revision. Continued use of
         Subsify after changes constitutes acceptance of the updated terms.
       </Body>

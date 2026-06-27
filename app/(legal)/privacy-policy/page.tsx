@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
 
       <SectionHeading>Changes to this policy</SectionHeading>
       <Body>
-        We may update this policy from time to time. The "last updated" date at
+        We may update this policy from time to time. The &ldquo;last updated&rdquo; date at
         the top of this page reflects the most recent revision. Continued use of
         Subsify after changes are posted constitutes acceptance of the updated
         policy.

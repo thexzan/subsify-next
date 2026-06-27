@@ -33,7 +33,7 @@ export default function SupportPage() {
       <Body>
         Subsify helps teams track software subscriptions, renewal dates, and
         monthly costs in one place. If you have a question or run into an issue,
-        we're here to help.
+        we&apos;re here to help.
       </Body>
 
       <SectionHeading>Contact us</SectionHeading>
@@ -62,7 +62,7 @@ export default function SupportPage() {
               >
                 {SUPPORT_EMAIL}
               </a>{" "}
-              with the subject "Reset my password" and we will assist you.
+              with the subject &ldquo;Reset my password&rdquo; and we will assist you.
             </>
           }
         />
@@ -77,7 +77,7 @@ export default function SupportPage() {
               >
                 {SUPPORT_EMAIL}
               </a>{" "}
-              with the subject "Delete my account" from your registered email
+              with the subject &ldquo;Delete my account&rdquo; from your registered email
               address. We will permanently remove your account and all associated
               data within 5 business days.
             </>
