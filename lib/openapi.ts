@@ -11,6 +11,7 @@ import {
   profileInputSchema,
   preferencesResponseSchema,
   preferencesInputSchema,
+  deleteAccountSchema,
 } from "./api-schemas";
 
 // Derive JSON Schema from the same zod schemas the API validates with, so the
@@ -64,10 +65,30 @@ export function buildOpenApiDocument() {
         Preferences: jsonSchema(preferencesResponseSchema),
         PreferencesInput: jsonSchema(preferencesInputSchema),
         Error: jsonSchema(errorResponseSchema),
+        DeleteAccount: jsonSchema(deleteAccountSchema),
       },
     },
     security: [{ bearerAuth: [] }, { cookieAuth: [] }],
     paths: {
+      "/api/auth/account": {
+        delete: {
+          summary: "Delete the authenticated user's account",
+          tags: ["Auth"],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/DeleteAccount" },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Account deleted" },
+            "400": errorResponse("Incorrect password or validation error"),
+            "401": errorResponse("Authentication required"),
+          },
+        },
+      },
       "/api/auth/register": {
         post: {
           summary: "Create a new account",
