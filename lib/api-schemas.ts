@@ -67,6 +67,10 @@ export const preferencesResponseSchema = z.object({
   urgentThresholdDays: z.number(),
 });
 
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+});
+
 export const preferencesInputSchema = z
   .object({
     expiringThresholdDays: z.coerce.number().int().min(1).max(365),
