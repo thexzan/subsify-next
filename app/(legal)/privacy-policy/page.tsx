@@ -1,24 +1,9 @@
 import type { Metadata } from "next";
+import { SUPPORT_EMAIL, LAST_UPDATED, SectionHeading, Body } from "../_legal";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Subsify",
 };
-
-const LAST_UPDATED = "27 June 2026";
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-      {children}
-    </h2>
-  );
-}
-
-function Body({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-sm leading-relaxed text-foreground">{children}</p>
-  );
-}
 
 export default function PrivacyPolicyPage() {
   return (
@@ -67,10 +52,10 @@ export default function PrivacyPolicyPage() {
         You have the right to access, correct, or delete your personal data at
         any time. To exercise these rights, contact us at{" "}
         <a
-          href="mailto:ask-subsify@xzan.my.id"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="text-primary underline underline-offset-4"
         >
-          ask-subsify@xzan.my.id
+          {SUPPORT_EMAIL}
         </a>
         .
       </Body>
@@ -94,10 +79,10 @@ export default function PrivacyPolicyPage() {
       <Body>
         Questions about this policy?{" "}
         <a
-          href="mailto:ask-subsify@xzan.my.id"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="text-primary underline underline-offset-4"
         >
-          ask-subsify@xzan.my.id
+          {SUPPORT_EMAIL}
         </a>
       </Body>
 

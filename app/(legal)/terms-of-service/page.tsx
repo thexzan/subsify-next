@@ -1,24 +1,9 @@
 import type { Metadata } from "next";
+import { SUPPORT_EMAIL, LAST_UPDATED, SectionHeading, Body } from "../_legal";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Subsify",
 };
-
-const LAST_UPDATED = "27 June 2026";
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-      {children}
-    </h2>
-  );
-}
-
-function Body({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-sm leading-relaxed text-foreground">{children}</p>
-  );
-}
 
 export default function TermsOfServicePage() {
   return (
@@ -52,10 +37,10 @@ export default function TermsOfServicePage() {
         credentials and for all activity that occurs under your account. Notify
         us immediately at{" "}
         <a
-          href="mailto:ask-subsify@xzan.my.id"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="text-primary underline underline-offset-4"
         >
-          ask-subsify@xzan.my.id
+          {SUPPORT_EMAIL}
         </a>{" "}
         if you suspect unauthorized access.
       </Body>
@@ -105,10 +90,10 @@ export default function TermsOfServicePage() {
       <Body>
         Questions about these terms?{" "}
         <a
-          href="mailto:ask-subsify@xzan.my.id"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="text-primary underline underline-offset-4"
         >
-          ask-subsify@xzan.my.id
+          {SUPPORT_EMAIL}
         </a>
       </Body>
 

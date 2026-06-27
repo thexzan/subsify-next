@@ -1,25 +1,9 @@
 import type { Metadata } from "next";
+import { SUPPORT_EMAIL, LAST_UPDATED, SectionHeading, Body } from "../_legal";
 
 export const metadata: Metadata = {
   title: "Support — Subsify",
 };
-
-const SUPPORT_EMAIL = "ask-subsify@xzan.my.id";
-const LAST_UPDATED = "27 June 2026";
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-      {children}
-    </h2>
-  );
-}
-
-function Body({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-sm leading-relaxed text-foreground">{children}</p>
-  );
-}
 
 function FaqItem({
   question,
@@ -102,6 +86,10 @@ export default function SupportPage() {
         <FaqItem
           question="How do I update my subscription data?"
           answer="Open the subscription from the dashboard and tap the edit icon. Changes are saved immediately."
+        />
+        <FaqItem
+          question="Can I export my subscription data?"
+          answer="Data export is not currently available. Contact us at ask-subsify@xzan.my.id if you need a copy of your data."
         />
         <FaqItem
           question="Who do I contact for billing or account issues?"
