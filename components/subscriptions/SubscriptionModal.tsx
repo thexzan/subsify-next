@@ -54,35 +54,28 @@ function toPayload(values: SubscriptionFormValues) {
   };
 }
 
-export function SubscriptionModal({
-  open,
-  onOpenChange,
+/**
+ * Form + renewal-history body. The parent remounts this (via `key`) whenever a
+ * different subscription — or a newer version of the same one (`updatedAt`) — is
+ * opened, so all local state resets cleanly without syncing props into state.
+ * An inline renew updates `local` in place, which does NOT remount, so the panel
+ * stays open and the form re-keys to the new date.
+ */
+function SubscriptionModalBody({
   editing,
   departments,
+  isMobile,
+  onOpenChange,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   editing: Subscription | null;
   departments: string[];
+  isMobile: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
-
-  // Local copy so an inline renew can update the record in place (new date +
-  // active status) without closing the modal.
   const [local, setLocal] = useState<Subscription | null>(editing);
   const [renewing, setRenewing] = useState(false);
   const [renewDate, setRenewDate] = useState("");
-
-  // Reset in-place state when a different subscription is opened. React's
-  // "adjust state during render" pattern (not an effect) avoids cascading
-  // renders while keeping an inline renew's update sticky.
-  const [tracked, setTracked] = useState(editing);
-  if (editing !== tracked) {
-    setTracked(editing);
-    setLocal(editing);
-    setRenewing(false);
-  }
 
   const { renew, isPending: isRenewing } = useRenewSubscription({
     onSuccess: (updated) => {
@@ -116,11 +109,6 @@ export function SubscriptionModal({
       toast.error(err.message);
     },
   });
-
-  const title = local ? "Edit subscription" : "Add subscription";
-  const description = local
-    ? "Update the details for this tool."
-    : "Track a new tool and its renewal.";
 
   const form = (
     <SubscriptionForm
@@ -198,6 +186,46 @@ export function SubscriptionModal({
     </div>
   );
 
+  return (
+    <>
+      {form}
+      {historySection &&
+        (isMobile ? <div className="px-4 pb-6">{historySection}</div> : historySection)}
+    </>
+  );
+}
+
+export function SubscriptionModal({
+  open,
+  onOpenChange,
+  editing,
+  departments,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editing: Subscription | null;
+  departments: string[];
+}) {
+  const isMobile = useIsMobile();
+
+  const title = editing ? "Edit subscription" : "Add subscription";
+  const description = editing
+    ? "Update the details for this tool."
+    : "Track a new tool and its renewal.";
+
+  // Remount the body when a different subscription — or a newer version of the
+  // same one — is opened. `updatedAt` changes on every server mutation, so
+  // reopening after a renew shows fresh data rather than stale local state.
+  const body = (
+    <SubscriptionModalBody
+      key={editing ? `${editing.id}-${editing.updatedAt}` : "new"}
+      editing={editing}
+      departments={departments}
+      isMobile={isMobile}
+      onOpenChange={onOpenChange}
+    />
+  );
+
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -206,10 +234,7 @@ export function SubscriptionModal({
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          {form}
-          {historySection && (
-            <div className="px-4 pb-6">{historySection}</div>
-          )}
+          {body}
         </DrawerContent>
       </Drawer>
     );
@@ -222,8 +247,7 @@ export function SubscriptionModal({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {form}
-        {historySection}
+        {body}
       </DialogContent>
     </Dialog>
   );
