@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { CalendarCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +18,17 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   SubscriptionForm,
   type SubscriptionFormValues,
 } from "./SubscriptionForm";
 import type { Subscription } from "@/lib/types";
+import { RenewalHistoryList } from "./RenewalHistoryList";
+import { suggestNextRenewal } from "@/lib/status";
+import { useRenewSubscription } from "@/lib/hooks/use-renew-subscription";
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
@@ -61,14 +68,35 @@ export function SubscriptionModal({
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  // Local copy so an inline renew can update the record in place (new date +
+  // active status) without closing the modal.
+  const [local, setLocal] = useState<Subscription | null>(editing);
+  const [renewing, setRenewing] = useState(false);
+  const [renewDate, setRenewDate] = useState("");
+
+  // Reset in-place state when a different subscription is opened. React's
+  // "adjust state during render" pattern (not an effect) avoids cascading
+  // renders while keeping an inline renew's update sticky.
+  const [tracked, setTracked] = useState(editing);
+  if (editing !== tracked) {
+    setTracked(editing);
+    setLocal(editing);
+    setRenewing(false);
+  }
+
+  const { renew, isPending: isRenewing } = useRenewSubscription({
+    onSuccess: (updated) => {
+      setLocal(updated);
+      setRenewing(false);
+    },
+  });
+
   const mutation = useMutation({
     mutationFn: async (values: SubscriptionFormValues) => {
       const payload = toPayload(values);
-      const url = editing
-        ? `/api/subscriptions/${editing.id}`
-        : "/api/subscriptions";
+      const url = local ? `/api/subscriptions/${local.id}` : "/api/subscriptions";
       const res = await fetch(url, {
-        method: editing ? "PUT" : "POST",
+        method: local ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -81,7 +109,7 @@ export function SubscriptionModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
-      toast.success(editing ? "Subscription updated" : "Subscription added");
+      toast.success(local ? "Subscription updated" : "Subscription added");
       onOpenChange(false);
     },
     onError: (err: Error) => {
@@ -89,20 +117,85 @@ export function SubscriptionModal({
     },
   });
 
-  const title = editing ? "Edit subscription" : "Add subscription";
-  const description = editing
+  const title = local ? "Edit subscription" : "Add subscription";
+  const description = local
     ? "Update the details for this tool."
     : "Track a new tool and its renewal.";
 
   const form = (
     <SubscriptionForm
-      key={editing?.id ?? "new"}
+      // Re-key on the renewal date/status so an inline renew refreshes the
+      // fields to the new server truth instead of showing the stale date.
+      key={local ? `${local.id}-${local.renewalDate}-${local.status}` : "new"}
       departments={departments}
-      initial={editing ?? undefined}
+      initial={local ?? undefined}
       submitting={mutation.isPending}
       onSubmit={(values) => mutation.mutate(values)}
       onCancel={() => onOpenChange(false)}
     />
+  );
+
+  const startRenew = () => {
+    if (!local) return;
+    const suggested = suggestNextRenewal(
+      local.renewalDate ? new Date(local.renewalDate) : null,
+    );
+    setRenewDate(suggested.toISOString().slice(0, 10));
+    setRenewing(true);
+  };
+
+  const canRenew =
+    local && local.effectiveStatus !== "cancelled" && !!local.renewalDate;
+
+  const historySection = local && (
+    <div className="mt-2 border-t border-border pt-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">Renewal history</p>
+        {canRenew && !renewing && (
+          <Button variant="outline" size="sm" onClick={startRenew}>
+            <CalendarCheck className="h-4 w-4" />
+            Mark as renewed
+          </Button>
+        )}
+      </div>
+
+      {renewing && (
+        <div className="mt-3 space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+          <Label htmlFor="inline-renew-date">Next renewal date</Label>
+          <Input
+            id="inline-renew-date"
+            type="date"
+            value={renewDate}
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setRenewDate(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Records a renewal and moves the date forward.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRenewing(false)}
+              disabled={isRenewing}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => renew({ id: local.id, renewalDate: renewDate })}
+              disabled={!renewDate || isRenewing}
+            >
+              {isRenewing ? "Saving…" : "Confirm renewal"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3">
+        <RenewalHistoryList subscriptionId={local.id} />
+      </div>
+    </div>
   );
 
   if (isMobile) {
@@ -114,6 +207,9 @@ export function SubscriptionModal({
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
           {form}
+          {historySection && (
+            <div className="px-4 pb-6">{historySection}</div>
+          )}
         </DrawerContent>
       </Drawer>
     );
@@ -121,12 +217,13 @@ export function SubscriptionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         {form}
+        {historySection}
       </DialogContent>
     </Dialog>
   );

@@ -30,18 +30,33 @@ enum SubStatus {
 }
 
 model Subscription {
-  id           Int       @id @default(autoincrement())
-  toolName     String    @map("tool_name") @db.VarChar(100)
-  department   String    @db.VarChar(100)
-  renewalDate  DateTime? @map("renewal_date") @db.Date
-  monthlyCost  Decimal   @map("monthly_cost") @db.Decimal(12, 2)
-  status       SubStatus @default(active)
-  notes        String?   @db.Text
-  userId       Int       @map("user_id")
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id           Int              @id @default(autoincrement())
+  toolName     String           @map("tool_name") @db.VarChar(100)
+  department   String           @db.VarChar(100)
+  renewalDate  DateTime?        @map("renewal_date") @db.Date
+  monthlyCost  Decimal          @map("monthly_cost") @db.Decimal(12, 2)
+  status       SubStatus        @default(active)
+  notes        String?          @db.Text
+  userId       Int              @map("user_id")
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  renewals     RenewalHistory[]
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("subscriptions")
+}
+
+model RenewalHistory {
+  id                  Int          @id @default(autoincrement())
+  subscriptionId      Int          @map("subscription_id")
+  subscription        Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  previousRenewalDate DateTime?    @map("previous_renewal_date") @db.Date
+  newRenewalDate      DateTime     @map("new_renewal_date") @db.Date
+  costSnapshot        Decimal      @map("cost_snapshot") @db.Decimal(12, 2)
+  previousStatus      SubStatus    @map("previous_status")
+  renewedAt           DateTime     @default(now()) @map("renewed_at")
+
+  @@index([subscriptionId])
+  @@map("renewal_history")
 }

@@ -1,4 +1,4 @@
-import type { Subscription } from "@/app/generated/prisma/client";
+import type { Subscription, RenewalHistory } from "@/app/generated/prisma/client";
 import { computeEffectiveStatus, daysUntilRenewal, type EffectiveStatus } from "./status";
 
 export type SerializedSubscription = {
@@ -31,5 +31,29 @@ export function serializeSubscription(
     notes: sub.notes,
     createdAt: sub.createdAt.toISOString(),
     updatedAt: sub.updatedAt.toISOString(),
+  };
+}
+
+export type SerializedRenewal = {
+  id: number;
+  subscriptionId: number;
+  previousRenewalDate: string | null;
+  newRenewalDate: string;
+  costSnapshot: number;
+  previousStatus: string;
+  renewedAt: string;
+};
+
+export function serializeRenewal(renewal: RenewalHistory): SerializedRenewal {
+  return {
+    id: renewal.id,
+    subscriptionId: renewal.subscriptionId,
+    previousRenewalDate: renewal.previousRenewalDate
+      ? renewal.previousRenewalDate.toISOString().slice(0, 10)
+      : null,
+    newRenewalDate: renewal.newRenewalDate.toISOString().slice(0, 10),
+    costSnapshot: Number(renewal.costSnapshot),
+    previousStatus: renewal.previousStatus,
+    renewedAt: renewal.renewedAt.toISOString(),
   };
 }
