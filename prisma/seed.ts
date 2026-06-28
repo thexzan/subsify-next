@@ -41,12 +41,51 @@ async function main() {
   ];
 
   // Reset to keep seed deterministic across re-runs.
+  // renewal_history rows cascade-delete with their subscriptions.
   await prisma.subscription.deleteMany();
   await prisma.subscription.createMany({
     data: subscriptions.map((s) => ({ ...s, userId: admin.id })),
   });
 
-  console.log(`Seeded 1 user and ${subscriptions.length} subscriptions.`);
+  // Seed a little renewal history so the feature is visible on a fresh demo.
+  // createMany doesn't return ids on MySQL, so fetch the rows back by name.
+  const [notion, figma] = await Promise.all([
+    prisma.subscription.findFirst({
+      where: { toolName: "Notion", userId: admin.id },
+    }),
+    prisma.subscription.findFirst({
+      where: { toolName: "Figma", userId: admin.id },
+    }),
+  ]);
+
+  const historyRows = [];
+  if (notion) {
+    historyRows.push({
+      subscriptionId: notion.id,
+      previousRenewalDate: daysFromNow(5 - 30), // the cycle before the current one
+      newRenewalDate: daysFromNow(5),
+      costSnapshot: notion.monthlyCost,
+      previousStatus: SubStatus.active,
+      renewedAt: daysFromNow(-25),
+    });
+  }
+  if (figma) {
+    historyRows.push({
+      subscriptionId: figma.id,
+      previousRenewalDate: daysFromNow(25 - 30),
+      newRenewalDate: daysFromNow(25),
+      costSnapshot: figma.monthlyCost,
+      previousStatus: SubStatus.active,
+      renewedAt: daysFromNow(-5),
+    });
+  }
+  if (historyRows.length > 0) {
+    await prisma.renewalHistory.createMany({ data: historyRows });
+  }
+
+  console.log(
+    `Seeded 1 user, ${subscriptions.length} subscriptions, and ${historyRows.length} renewal-history rows.`,
+  );
 }
 
 main()

@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { subscriptionInputSchema } from "./validation";
+import { subscriptionInputSchema, renewSchema } from "./validation";
 import {
   subscriptionResponseSchema,
+  renewalResponseSchema,
   statsResponseSchema,
   tokenResponseSchema,
   errorResponseSchema,
@@ -56,6 +57,8 @@ export function buildOpenApiDocument() {
       schemas: {
         Subscription: jsonSchema(subscriptionResponseSchema),
         SubscriptionInput: jsonSchema(subscriptionInputSchema),
+        RenewalHistory: jsonSchema(renewalResponseSchema),
+        RenewInput: jsonSchema(renewSchema),
         Stats: jsonSchema(statsResponseSchema),
         TokenResponse: jsonSchema(tokenResponseSchema),
         Credentials: jsonSchema(credentialsSchema),
@@ -339,6 +342,72 @@ export function buildOpenApiDocument() {
           tags: ["Subscriptions"],
           responses: {
             "204": { description: "Deleted" },
+            "401": errorResponse("Authentication required"),
+            "404": errorResponse("Not found"),
+          },
+        },
+      },
+      "/api/subscriptions/{id}/renew": {
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        post: {
+          summary: "Mark a subscription as renewed",
+          description:
+            "Advances the renewal date and reactivates the subscription, recording a renewal-history entry atomically.",
+          tags: ["Subscriptions"],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/RenewInput" },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "The renewed subscription",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Subscription" },
+                },
+              },
+            },
+            "400": errorResponse("Validation error (e.g. renewal date in the past)"),
+            "401": errorResponse("Authentication required"),
+            "404": errorResponse("Not found"),
+          },
+        },
+      },
+      "/api/subscriptions/{id}/renewals": {
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        get: {
+          summary: "List a subscription's renewal history",
+          tags: ["Subscriptions"],
+          responses: {
+            "200": {
+              description: "Renewal history, newest first",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "array",
+                    items: { $ref: "#/components/schemas/RenewalHistory" },
+                  },
+                },
+              },
+            },
             "401": errorResponse("Authentication required"),
             "404": errorResponse("Not found"),
           },

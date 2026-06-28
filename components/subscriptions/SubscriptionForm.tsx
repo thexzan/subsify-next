@@ -111,7 +111,9 @@ export function SubscriptionForm({
           <Label htmlFor="renewalDate">Renewal date</Label>
           <Input id="renewalDate" type="date" {...register("renewalDate")} />
           <p className="text-xs text-muted-foreground">
-            Optional — not needed for cancelled subscriptions.
+            {initial
+              ? "The next renewal date. Edit only to correct it — to log an actual renewal, use “Mark as renewed” below."
+              : "Optional — not needed for cancelled subscriptions."}
           </p>
         </div>
         <div className="space-y-2">

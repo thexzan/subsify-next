@@ -2,6 +2,15 @@ import { z } from "zod";
 
 export const SUB_STATUS_VALUES = ["active", "expired", "cancelled"] as const;
 
+export const renewSchema = z.object({
+  renewalDate: z.iso.date().refine(
+    (v) => v >= new Date().toISOString().slice(0, 10),
+    { message: "Renewal date must be today or in the future" },
+  ),
+});
+
+export type RenewInput = z.infer<typeof renewSchema>;
+
 export const subscriptionInputSchema = z.object({
   toolName: z.string().trim().min(1, "Tool name is required").max(100),
   department: z.string().trim().min(1, "Department is required").max(100),

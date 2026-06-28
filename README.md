@@ -26,6 +26,8 @@ The backend is built API-first, so the same REST endpoints that power the web ap
 
 - **Dashboard** — summary counts (total, active, expiring soon, expired), total monthly spend, and a renewal radar plotting everything due within the configured window
 - **Subscription management** — add, edit, delete, and quick-change status; each tool tracks name, department, renewal date, monthly cost, status, and notes
+- **Mark as renewed** — record a renewal in one step: it advances the renewal date, reactivates the subscription, and appends a history entry, all atomically. Available from the list's row actions and inline in the edit dialog
+- **Renewal history** — every renewal is logged (previous → new date, cost snapshot) and shown in the edit dialog
 - **Search & filter** — search by tool or department; filter by status (segmented tabs) and department (server-side)
 - **Renewal alerts** — rows renewing within the urgent window (default 7 days) are flagged red, within the expiring window (default 30 days) amber; both windows are user-configurable. Active rows approaching renewal show explicit "Expiring soon" / "Urgent" badges.
 - **Settings** — per-user configurable alert thresholds for expiring-soon and urgent windows
@@ -133,6 +135,8 @@ All endpoints return JSON. Requests authenticate with either the session cookie 
 | `GET` | `/api/subscriptions/:id` | Get one subscription |
 | `PUT` | `/api/subscriptions/:id` | Update a subscription |
 | `DELETE` | `/api/subscriptions/:id` | Delete a subscription |
+| `POST` | `/api/subscriptions/:id/renew` | Mark renewed: advance the date, reactivate, and log history |
+| `GET` | `/api/subscriptions/:id/renewals` | List a subscription's renewal history |
 | `GET` | `/api/stats` | Dashboard counts and total monthly cost |
 
 ### Using the API with a Bearer token

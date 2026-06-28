@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  CalendarCheck,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
@@ -38,12 +39,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { StatusBadge, UrgencyBadge } from "./StatusBadge";
 import { isRowExpiringSoon } from "@/lib/subscriptions";
 import { formatDate, formatIDR, type Subscription } from "@/lib/types";
 import { SUB_STATUS_VALUES } from "@/lib/validation";
 import { usePreferences } from "@/lib/hooks/use-preferences";
+import { useRenewSubscription } from "@/lib/hooks/use-renew-subscription";
 import { cn } from "@/lib/utils";
+import { suggestNextRenewal } from "@/lib/status";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Active",
@@ -108,6 +120,8 @@ export function SubscriptionTable({
   const queryClient = useQueryClient();
   const { expiringThresholdDays, urgentThresholdDays } = usePreferences();
   const [deleteTarget, setDeleteTarget] = useState<Subscription | null>(null);
+  const [renewTarget, setRenewTarget] = useState<Subscription | null>(null);
+  const [renewDate, setRenewDate] = useState<string>("");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
 
   const sortedRows = useMemo(() => {
@@ -127,6 +141,14 @@ export function SubscriptionTable({
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     queryClient.invalidateQueries({ queryKey: ["stats"] });
+  };
+
+  const openRenew = (sub: Subscription) => {
+    const suggested = suggestNextRenewal(
+      sub.renewalDate ? new Date(sub.renewalDate) : null,
+    );
+    setRenewDate(suggested.toISOString().slice(0, 10));
+    setRenewTarget(sub);
   };
 
   const statusMutation = useMutation({
@@ -168,6 +190,10 @@ export function SubscriptionTable({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const { renew, isPending: isRenewing } = useRenewSubscription({
+    onSuccess: () => setRenewTarget(null),
+  });
+
   const renderActions = (sub: Subscription, triggerClass?: string) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -181,11 +207,21 @@ export function SubscriptionTable({
           <span className="sr-only">Actions</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+      <DropdownMenuContent
+        align="end"
+        className="w-52"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DropdownMenuItem onClick={() => onEdit(sub)}>
           <Pencil className="h-4 w-4" />
           Edit
         </DropdownMenuItem>
+        {sub.effectiveStatus !== "cancelled" && sub.renewalDate && (
+          <DropdownMenuItem onClick={() => openRenew(sub)}>
+            <CalendarCheck className="h-4 w-4" />
+            Mark as renewed
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Set status
@@ -339,6 +375,52 @@ export function SubscriptionTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={!!renewTarget}
+        onOpenChange={(o) => !o && setRenewTarget(null)}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Mark as renewed</DialogTitle>
+            <DialogDescription>
+              Set the next renewal date for{" "}
+              <span className="font-medium text-foreground">
+                {renewTarget?.toolName}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="renew-date">Next renewal date</Label>
+            <Input
+              id="renew-date"
+              type="date"
+              value={renewDate}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setRenewDate(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => setRenewTarget(null)}
+              disabled={isRenewing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                renewTarget &&
+                renew({ id: renewTarget.id, renewalDate: renewDate })
+              }
+              disabled={!renewDate || isRenewing}
+            >
+              {isRenewing ? "Saving…" : "Confirm renewal"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

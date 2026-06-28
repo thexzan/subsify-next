@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { SUB_STATUS_VALUES } from "./validation";
 
+export const renewalResponseSchema = z.object({
+  id: z.number(),
+  subscriptionId: z.number(),
+  previousRenewalDate: z.string().nullable(),
+  newRenewalDate: z.string(),
+  costSnapshot: z.number(),
+  previousStatus: z.enum(SUB_STATUS_VALUES),
+  renewedAt: z.string(),
+});
+
 export const subscriptionResponseSchema = z.object({
   id: z.number(),
   toolName: z.string(),

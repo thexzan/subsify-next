@@ -103,3 +103,21 @@ export function isUrgent(
   if (effectiveStatus !== "active") return false;
   return isWithinDays(renewalDate, threshold, now);
 }
+
+/**
+ * Suggests the next renewal date after a renewal action.
+ * Returns currentRenewalDate + 1 month if it is still in the future,
+ * otherwise today + 1 month. Always yields a future date.
+ */
+export function suggestNextRenewal(
+  currentRenewalDate: Date | null,
+  now: Date = new Date(),
+): Date {
+  const base =
+    currentRenewalDate && daysUntilRenewal(currentRenewalDate, now) > 0
+      ? currentRenewalDate
+      : now;
+  const next = new Date(base);
+  next.setMonth(next.getMonth() + 1);
+  return next;
+}

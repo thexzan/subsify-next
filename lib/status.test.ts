@@ -5,6 +5,7 @@ import {
   isWithinDays,
   isExpiringSoon,
   isUrgent,
+  suggestNextRenewal,
 } from "@/lib/status";
 
 // Fixed reference point so tests never depend on the wall clock.
@@ -131,5 +132,25 @@ describe("isUrgent (tighter band inside expiring soon)", () => {
 
   it("is false for non-active rows", () => {
     expect(isUrgent("expired", inDays(3), 7, NOW)).toBe(false);
+  });
+});
+
+describe("suggestNextRenewal", () => {
+  it("future renewal date → adds 1 month to that date", () => {
+    const renewal = new Date("2026-07-15");
+    expect(suggestNextRenewal(renewal, NOW).toISOString().slice(0, 10)).toBe("2026-08-15");
+  });
+
+  it("past renewal date → adds 1 month to today", () => {
+    const renewal = new Date("2026-05-01");
+    expect(suggestNextRenewal(renewal, NOW).toISOString().slice(0, 10)).toBe("2026-07-26");
+  });
+
+  it("null renewal date → adds 1 month to today", () => {
+    expect(suggestNextRenewal(null, NOW).toISOString().slice(0, 10)).toBe("2026-07-26");
+  });
+
+  it("renewal exactly today (0 days) → adds 1 month to today", () => {
+    expect(suggestNextRenewal(NOW, NOW).toISOString().slice(0, 10)).toBe("2026-07-26");
   });
 });
